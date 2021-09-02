@@ -74,6 +74,8 @@ function saveSource(forceOption){
 		console.error("window.opener is not. Can't save.");
 		return(null);
 	}
+	editedFlag=false;
+	fileNameSpan.style.color="";
 	return ( saveTxt );
 }
 
