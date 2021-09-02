@@ -1,7 +1,7 @@
 # PiZeroWebSerialConsole
 PCのUSB端子に接続した[Raspberry Pi Zero](https://www.raspberrypi.org/products/raspberry-pi-zero/)のコンソール(コマンドプロンプト)をWebブラウザから使用できます。
 
-* Raspberry Pi ZeroのUSB OTGシリアルとWeb Serial APIを使用しているため、IP設定は不要です。
+* Raspberry Pi ZeroのUSB OTGシリアルとWeb Serial APIを使用しているため、IP設定は不要です。(Raspberry Pi Zero WがWiFi接続されていない状態でも使用可能)
 * 簡易なファイルマネージャ機能があり、PCとRaspberry Piとの間でファイルの送受信ができます。
 * [Monaco Editor](https://microsoft.github.io/monaco-editor/)を搭載、テキストファイルの編集ができます。
 * [Raspberry Pi Zero W](https://www.raspberrypi.org/products/raspberry-pi-zero-w/)のWiFi設定のための専用UIがあります。
