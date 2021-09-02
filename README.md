@@ -11,3 +11,4 @@ USB OTG Serialのコンソールが有効化されたRaspberry Pi OSが動作し
 * あらかじめUSB OTG Serialのコンソールの有効化を含め、[CHIRIMEN開発環境が設定されたこちらのOSイメージ](https://github.com/kou029w/chirimen-os/releases/)を使うと簡単です。
 * 自分で設定するには、[Raspberry Pi OS Lite](https://www.raspberrypi.org/software/operating-systems/#raspberry-pi-os-32-bit)を導入し、[USB OTG Serialのコンソールを有効化](https://gist.github.com/satakagi/dd34c29b0192540080681e2443258282)します。
 * Note: Pi ZeroのこのポートがUSB OTGポートです。
+![pi zero otg port](imgs/PiZeroW_OTG.JPG)
