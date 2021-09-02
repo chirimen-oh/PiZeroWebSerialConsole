@@ -12,3 +12,8 @@ USB OTG Serialのコンソールが有効化されたRaspberry Pi OSが動作し
 * 自分で設定するには、[Raspberry Pi OS Lite](https://www.raspberrypi.org/software/operating-systems/#raspberry-pi-os-32-bit)を導入し、[USB OTG Serialのコンソールを有効化](https://gist.github.com/satakagi/dd34c29b0192540080681e2443258282)します。
 * Note: Pi ZeroのこのポートがUSB OTGポートです。
 ![pi zero otg port](imgs/PiZeroW_OTG.JPG)
+
+## 使用
+* PCのUSBとRaspberry Pi ZeroのUSB OTGポートをUSBケーブルでつなぎます
+* こちらのページにアクセス
+* CONNECTボタンを押す
