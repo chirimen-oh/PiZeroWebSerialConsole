@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+<title>monaco test</title>
+<meta charset="utf-8"></meta>
+</head>
+<style>
+html,body {
+	margin: 0;
+	padding: 0px;
+	height:100%;
+	overflow: hidden; // https://stackoverflow.com/questions/12989931/body-height-100-displaying-vertical-scrollbar
+}
+
+#container {
+	//height:100%;
+	height: calc(100% - 24px);
+}
+#menuDiv {
+	//height:100%;
+	height: 24px;
+}
+</style>
+
+	<script>var require = { paths: { 'vs': 'monaco/min/vs' } };</script>
+	<script src="monaco/min/vs/loader.js"></script>
+	<script src="monaco/min/vs/editor/editor.main.nls.js"></script>
+	<script src="monaco/min/vs/editor/editor.main.js"></script>
+
+<script>
+// https://microsoft.github.io/monaco-editor/
+// https://qiita.com/erukiti/items/1720711dd46a9df3d332
+// https://stackoverflow.com/questions/38086013/get-the-value-of-monaco-editor
+var editor;
+//var jsSrc = "// First line\nfunction hello() {\n\talert('Hello world!');\n}\n// Last line";
+var jsSrc = "// New Monaco Editor";
+require(['vs/editor/editor.main'], function () {
+	editor = monaco.editor.create(document.getElementById("container"), {
+		value: jsSrc,
+		language: "javascript",
+		lineNumbers: "off",
+		roundedSelection: false,
+		scrollBeyondLastLine: false,
+		automaticLayout: true, // https://github.com/microsoft/monaco-editor/issues/28
+		readOnly: false,
+		theme: "vs-dark",
+		lineNumbers: "on"
+	});
+	editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, function(){
+		saveSource(true);
+		/**
+		editor.getAction('editor.action.formatDocument').run();
+		var value = editor.getValue();
+		console.log('saved : ', value);
+		**/
+	})
+});
+
+function saveSource(forceOption){
+	if ( saveDisabled ){
+		console.log("saveDisabled.. exit!");
+		return(null);
+	}
+	if ( editedFlag == false){
+		console.warn("Source text is not yet changed skip save.");
+		return(null);
+	}
+	// editor.getAction('editor.action.formatDocument').run(); // js整形する
+	var saveTxt = editor.getValue();
+	console.log('saved : ', saveTxt);
+	if ( window.opener ){
+		window.opener.setEditedText( saveTxt, sourcePath, forceOption);
+	} else {
+		console.error("window.opener is not. Can't save.");
+		return(null);
+	}
+	return ( saveTxt );
+}
+
+function jsFormat(forceOption){
+	editor.getAction('editor.action.formatDocument').run(); // js整形する
+}
+
+window.addEventListener('beforeunload', function(event){ // ウィンドを閉じるときに保存するかを・・
+	if ( editedFlag ){
+		event.preventDefault();
+		event.returnValue = '';
+	}
+})
+
+var saveDisabled=false;
+function disableSave(){
+	setReadOnly(true);
+	saveBtn.style.display="none";
+	saveDisabled=true;
+}
+
+
+function setReadOnly(readonlyOpt){
+	editor.updateOptions({ readOnly: readonlyOpt })
+}
+
+var sourcePath={};
+/**
+function setFilePath(fileName,dir){
+	sourcePath={fileName:fileName,dir:dir};
+	fileNameSpan.innerText=sourcePath.fileName;
+}
+function getFilePath(){
+	return(sourcePath);
+}
+**/
+
+var editedFlag=false;
+
+async function editSrc(srcTxt, fileName, currentDir,editFlg){
+	editor.setValue(srcTxt);
+	editor.onDidChangeModelContent(function (e) { // https://stackoverflow.com/questions/48828538/monaco-editor-onchange-event
+		// console.log("onDidChangeModelContent event");
+		editedFlag=true;
+		fileNameSpan.style.color="red";
+    });
+	sourcePath={fileName:fileName,dir:currentDir};
+	fileNameSpan.innerText=sourcePath.fileName;
+	if ( !editFlg){
+		await sleep(100);
+		disableSave();
+	}
+}
+
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+
+</script>
+<body>
+<div id="menuDiv">
+JS Editor: <input id="saveBtn" type="button" value="save (ctrl+s)" onclick="saveSource(true)"/>
+ <input type="button" value="Javascript Format" onclick="jsFormat(true)"/> <span style="font-size:11px" id="fileNameSpan"></span>
+</div>
+<div id="container" style=""></div>
+
+</body>
+</html>

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web Serial（Read）</title>
+      <link rel="stylesheet" href="https://unpkg.com/xterm@4.0.0/css/xterm.css" />
+      <script src="https://unpkg.com/xterm@4.0.0/lib/xterm.js"></script>
+  </head>
+
+<style>
+.filelistdiv {
+  overflow-x: hidden;
+  width: 180px;
+  height: 300px;
+//  margin: 0 auto;
+  padding: 0;
+//  box-sizing: border-box;
+//  display: flex;
+}
+.filelist {
+  width: 180px;
+  margin: 0;
+  padding: 0;
+}
+.filelist li {
+  position: relative;
+  width: 180px;
+  height: 20px;
+}
+.filelist > li {
+  border-bottom: none;
+}
+.filelist li:last-child {
+  border-bottom: none;
+}
+.filelist li:hover > ul > li {
+  border-bottom: none;
+}
+.filelist li > ul > li:last-child {
+  border-bottom: none;
+}
+.filelist li span { /* layer-1 */
+  display: block;
+  width: 180px;
+  height: 20px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 0 3px;
+  background: #356;
+  border-bottom: 1px solid #eee;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+.filelist > li:hover > span {/*layer-1 sel*/
+  color: orange;
+  background: #46f;
+	cursor : pointer;
+}
+.filelist > li:hover > span > label {/*layer-1 label sel*/
+	cursor : pointer;
+}
+.filelist > li li:hover > span {/*layer-2 sel*/
+  color: #611; 
+  background: #d4f;
+	cursor : pointer;
+}
+.filelist li:hover > ul > li {/*layer-2*/
+  overflow: visible;
+  top: -20px;
+  left: 40px;
+  height: 20px;
+  z-index:2;
+}
+.filelist li ul li {
+  overflow: hidden;
+  height: 0;
+//  left: 110px;
+  list-style: none;
+}
+.filelist li ul li span {/*layer-2*/
+  background: #93d;
+  width: 100px;
+}
+
+.filelist li:hover ul li ul li:hover > span {/*layer-3 sel*/
+  color: #22a;
+  background: #d01;
+	z-index:3;
+}
+
+.filelist li:hover > ul > li:hover > ul > li{
+  left: 10px;
+}
+
+.filelist li ul li ul li span { /*layer-3*/
+  background: #622;
+  width: 50px;
+}
+</style>
+<style type="text/css">
+#fileListTable {
+//	overflow:auto;
+	width:200px;
+	height:420px;
+	margin:0px;
+	padding:0px;
+	border:0px;
+	background-color:#F9F9F9;
+	color:#000;
+	font-size:10px;
+}
+input{
+	font-size:9px;
+}
+button{
+	font-size:12px;
+}
+table{
+	 table-layout: fixed;
+}
+.fileListNameTd{
+	width:100px;
+}
+.fileListBtnTd{
+	width:50px;
+}
+</style>
+
+<script>
+/**
+PiZeroWebSerialConsole Web App.
+
+This is an application that allows a web browser to interact with the
+Raspberry Pi Zero via its USB OTG Serial, regardless of the IP settings.
+
+================================================================================
+Programmed by Satoru Takagi
+Copyright 2021 by Satoru Takagi All Rights Reserved
+
+================================================================================
+License: (GPL v3)
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 3 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+However, if you want to use the contents of this repository for CHIRIMEN 
+community's projects, you can also choose the MIT license.
+So, this is a limited dual license for the CHIRIMEN community.
+
+================================================================================
+History
+
+2021/09/02 Initial Release
+
+================================================================================
+**/
+
+var port;
+var currentDir=""; // cdコマンドを打つたびに更新されるグローバル変数
+var currentDirFiles={};
+
+async function startConnection() { // Web Serial APIでRasoberry PiのUSB OTG Serialをつなぐ
+	try {
+		port = await navigator.serial.requestPort();
+		await port.open({ baudRate: 115200 });
+		serialConnecting=true;
+		startTermLoop();
+		term.writeln('<<CONNECTED>>');
+	} catch (error) {
+		console.log("Error: Open");
+		console.log(error);
+	}
+}
+var serialConnecting;
+async function terminateConnection(){
+	serialConnecting=false;
+	portWrite(" ");
+	await sleep("10");
+	await port.close();
+	term.writeln("\r\n<<CONNETCTION CLOSED>>");
+}
+
+async function startTermLoop(){
+	try{
+		while (port.readable && serialConnecting) {
+			const reader = port.readable.getReader();
+			try {
+				waitForSerialIn.inputValue ="";
+				while (serialConnecting) {
+					if (waitForSerialIn.inputValue.endsWith("\n")){
+						//waitForSerialIn.inputValue ="";
+					}
+					const { value, done } = await reader.read();
+					if (done) {
+						console.log("Canceled");
+						break;
+					}
+					waitForSerialIn.inputValue = waitForSerialIn.inputValue + new TextDecoder("utf-8").decode(value);
+					//console.log(waitForSerialIn.inputValue.replace("\n","[RET]\n"));
+					// console.log(waitForSerialIn.RegExp,waitForSerialIn.inputValue.match(waitForSerialIn.RegExp));
+					if ( waitForSerialIn.RegExp && waitForSerialIn.CBF && waitForSerialIn.inputValue.match(waitForSerialIn.RegExp)!=null ){
+						waitForSerialIn.CBF(waitForSerialIn.inputValue);
+						clearTimeout(waitForSerialIn.TimeOutID);
+						waitForSerialIn.RegExp = null;
+						waitForSerialIn.CBF = null;
+						waitForSerialIn.inputValue="";
+					}
+					if (value) {
+						term.writeUtf8(value);
+					}
+				}
+				console.log("exit termLoop");
+			} catch (error) {
+				console.log("Error: Read");
+				console.log(error);
+			} finally {
+				reader.releaseLock();
+			}
+		}
+	} catch (error) {
+		console.log("Error: Open");
+		console.log(error);
+	}
+}
+var term;
+var writer;
+//var  waitForSerialInRegExp, waitForSerialInCBF,waitForSerialInTimeOutID;
+const waitForSerialIn={
+	RegExp: null,
+	CBF: null,
+	TimeOutID: null,
+	inputValue: ""
+}
+
+
+var lang = "en";
+const encoder = new TextEncoder();
+onload=function(){
+	if ( navigator.language == "ja"){
+		lang = navigator.language;
+	}
+	term = new Terminal.Terminal();
+	term.open(document.getElementById('terminal'));
+	term.onData(function(data){
+		//console.log(data);
+		//term.writeUtf8(encoder.encode(data));
+		if ( port ){
+			writer = port.writable.getWriter();
+			writer.write(encoder.encode(data));
+			writer.releaseLock();
+		}
+	});
+}
+
+// シリアルに単に書き出すだけの関数
+function portWrite(data){
+	writer = port.writable.getWriter();
+	writer.write(encoder.encode(data));
+	writer.releaseLock();
+}
+function portWriteln(data){
+	portWrite(data+"\n");
+}
+
+
+// 書き出して、指定した文字列の返却を待つ非同期関数
+function portWriteWaitfor(writeData, waitForRegExp, timeOutMsOptional){
+	if ( typeof(waitForRegExp)=="string"){
+		waitForRegExp = new RegExp(waitForRegExp);
+		//console.log("RE:",waitForRegExp);
+	}
+	if ( !timeOutMsOptional ){
+		timeOutMsOptional=3000;
+	}
+	return new Promise(function(cbf , failCbf){
+		waitForSerialIn.inputValue="";
+		waitForSerialIn.RegExp=waitForRegExp;
+		waitForSerialIn.CBF=cbf;
+		
+		waitForSerialIn.TimeOutCBF = function(){
+			console.log("fail wait for:",waitForSerialIn.inputValue);
+			waitForSerialIn.inputValue="";
+			waitForSerialIn.CBF=null;
+			waitForSerialIn.Str=null;
+			if ( failCbf ){
+				failCbf();
+			}
+		}
+		waitForSerialIn.TimeOutID = setTimeout(waitForSerialIn.TimeOutCBF, timeOutMsOptional);
+		//console.log("portWrite:",writeData,"  cond:",waitForRegExp);
+		portWrite(writeData);
+	});
+	
+}
+async function portWritelnWaitfor(writeData, waitForRegExp, timeOutMsOptional){
+	var ret = await portWriteWaitfor(writeData + "\n",waitForRegExp, timeOutMsOptional);
+	return ( ret );
+}
+
+var ctrlc="\x03"; // ｅｎｄ　ｏｆ　ｔｅｘｔ
+var ctrld="\x04"; // ｅｎｄ　ｏｆ　ｔｒａｎｓｍｉｓｓｉｏｎ
+var ctrlz="\x1a";
+
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+
+function arrayBufferToBase64( buffer ) {
+    var binary = '';
+    var bytes = new Uint8Array( buffer );
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+        binary += String.fromCharCode( bytes[ i ] );
+    }
+    return window.btoa( binary );
+}
+
+function base64ToArrayBuffer(base64) {
+    var binary_string = window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+function getOutputLines(str){
+	var lines = str.split("\n");
+	var ans = [];
+	for ( var i = 0 ; i < lines.length ; i++ ){
+		ans.push(lines[i].trim());
+	}
+	return ( ans );
+}
+
+// アプリ的関数
+
+var cmdPrompt="pi@raspberrypi:"; // ホームは"pi@raspberrypi:~\\$"
+var loginId="pi";
+var loginPassword="raspberry";
+
+async function autoLogInPiZero(noRetry){ // ログイン処理
+	var ret;
+	await startConnection();
+	await sleep(100);
+	//	await portWriteWaitfor(ctrlc,".");
+	//console.log("ctrlc-> ret:",ret);
+	var hasResp;
+	term.write("Waiting prompt");
+	while ( !hasResp){
+		try{
+			portWrite(ctrlc);
+			ret = await portWriteWaitfor("\n",":",1000);
+			hasResp = true;
+		} catch ( e ){
+			console.log("retry resp");
+			term.write(".");
+			await sleep(1000);
+		}
+	}
+	console.log("enter-> ret:",ret);
+	if ( ret.indexOf("pi@")>=0){
+		console.log("already logged in");
+		//return;
+	} else if ( ret.indexOf("login:")>=0){
+		var ret = await portWriteWaitfor(loginId+"\n","Password:");
+		ret = await portWriteWaitfor(loginPassword+"\n","\\$");
+	} else if (!noRetry){
+		await autoLogInPiZero(true);
+	} else {
+		console.error("login fail...");
+		return;
+	}
+	document.getElementById("terminal").focus();
+	console.log("success");
+	await sleep(300);
+	await portWritelnWaitfor(" HISTCONTROL=ignoreboth",cmdPrompt); // 頭にスペースを付けたコマンド&連続したコマンドはhistoryに残さないようにする
+	await pwd();
+	await sleep(100);
+	await cdHome();
+	connectBtn.style.display="none";
+	cmdBtns.style.display="";
+}
+
+async function closeConnection(){
+	await terminateConnection();
+	connectBtn.style.display="";
+	cmdBtns.style.display="none";
+}
+
+
+var currentAbsDir;
+async function pwd(){
+	var ret = getOutputLines(await portWritelnWaitfor(" pwd",cmdPrompt));
+	console.log(ret);
+	currentAbsDir = ret[1].trim();
+	currentDir = getDirFromPrompt(ret[2]);
+	showCurrentDir();
+	return ( currentDir );
+}
+
+async function lsal(){
+	var ret = await portWritelnWaitfor(" ls -al",cmdPrompt);
+	ret = getOutputLines(ret);
+	var ans = [];
+	var prompt = (ret[ret.length-1]).trim();
+	for ( var i = 2 ; i < ret.length - 1 ; i++){
+		var fi=ret[i].split(/\s+/);
+		var isDir = false;
+		if(fi[0].substring(0,1)!="-"){
+			isDir = true;
+		}
+		fileInfo = {
+			attr:fi[0],
+			dir:isDir,
+			hlinks:fi[1],
+			group:fi[2],
+			user:fi[3],
+			size:fi[4],
+			month:fi[5],
+			date:fi[6],
+			time:fi[7],
+			name:fi[8]
+		}
+		ans.push(fileInfo);
+	}
+	return ( {files:ans,prompt:prompt });
+}
+
+async function rm(fileName){
+	// フルパスの場合はどうするか・・
+	var ret = getOutputLines(await portWritelnWaitfor(" rm "+fileName,cmdPrompt));
+	console.log(ret);
+}
+
+async function mv(fromPath, toPath, bySudo){
+	// フルパスの場合はどうするか・・
+	var sudoHead="";
+	if ( bySudo){
+		sudoHead="sudo ";
+	}
+	var ret = getOutputLines(await portWritelnWaitfor(" " + sudoHead + " mv " + fromPath + " " + toPath, cmdPrompt));
+	console.log(ret);
+}
+
+async function cp(fromPath, toPath, bySudo){
+	// フルパスの場合はどうするか・・
+	var sudoHead="";
+	if ( bySudo){
+		sudoHead="sudo ";
+	}
+	var ret = getOutputLines(await portWritelnWaitfor(" " + sudoHead + " cp " + fromPath + " " + toPath, cmdPrompt));
+	console.log(ret);
+}
+
+
+async function remveAndList(fileName){
+	var ret = await rm(fileName);
+	console.log("rm:",ret);
+	ret = await showDir();
+	console.log("ls:",ret);
+	currentDir = getDirFromPrompt(ret);
+	showCurrentDir();
+}
+
+function str2arrayBuffer_old(str) { // textDecoder使わないタイプ・・
+	return new Promise(function(callback) {
+		// https://qiita.com/ukyo/items/1626defd020b2157e6bf
+		var fr = new FileReader();
+		fr.onloadend = function() {
+		callback(fr.result);
+		};
+		fr.readAsArrayBuffer(new Blob([str]));
+	});
+}
+
+function str2arrayBuffer(str){
+	return ( new TextEncoder("utf-8").encode(str));
+}
+function arrayBuffer2str(buf){
+	return ( new TextDecoder("utf-8").decode(buf));
+}
+
+
+async function saveFile(buffer , fileName){
+	var base64 = arrayBufferToBase64(buffer);
+	//var ua = new Uint8Array(buffer);
+	// https://pisuke-code.com/js-soln-of-maximum-call-stack/
+	//var uas = String.fromCharCode.apply(null, new Uint8Array(buffer));
+	//console.log(ua);
+	//var base64String = window.btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
+	//console.log(base64String);
+	console.log(fileName);
+	
+	//var base64 =  base64String = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+	//console.log(base64);
+	
+	if ( progress ){
+		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル'></input>");
+	}
+	
+	transferFileObj.transferring = true;
+	await portWriteWaitfor( " base64 -d >"+fileName+"\n","\n");
+	for ( var i = 0 ; i <= Math.floor(base64.length / lineLength); i++ ){
+		if(transferFileObj.halt==true){
+			transferFileObj.halt=false;
+			break;
+		}
+		var line = base64.substring(i*lineLength, (i+1)*lineLength);
+		await portWriteWaitfor(line+"\n","\n");
+		if ( progress){
+			progressText.innerText=Math.floor(100 * i/Math.floor(base64.length / lineLength))+"% completed";
+		}
+	}
+	progress.innerText="";
+	//portWrite(base64);
+	portWrite(ctrld);
+	portWriteln("");
+	portWriteWaitfor("\n","\\$");
+	transferFileObj.transferring = false;
+}
+
+
+var lineLength=512;
+async function uploadFile(event){
+	// base64を使って任意のファイルを登録する感じ
+	// https://qiita.com/gyarasu/items/a8009ea76a561cf80b06
+	// https://qiita.com/allein-s/items/13d0e2fc0896df83b234
+	// https://qiita.com/kareharide/items/93f0257ee5c31e239e63
+	console.log("uploadFile:",event.target.files[0]);
+	var file = event.target.files[0];
+	var fileInputElement=event.target;
+	const fr = new FileReader();
+	fr.onload = async function(e){
+		var buffer = e.target.result;
+		
+		await saveFile(buffer , file.name)
+		fileInputElement.value="";
+		await sleep(200);
+		await showDir();
+	}
+	fr.readAsArrayBuffer(file);
+}
+
+async function wifiScan(){
+	var ret = getOutputLines(await portWritelnWaitfor(" sudo iwlist wlan0 scan",cmdPrompt));
+	const wifiInfos=[];
+	var wifiInfo={};
+	var first=true;
+	for ( var i = 1 ; i < ret.length - 1 ; i++){
+		var row=ret[i].split(/:/);
+		//console.log(row,ret[i].indexOf("Cell"));
+		if ( ret[i].indexOf("Cell")>=0 && ret[i].indexOf("Address")>0 ){
+			row=ret[i].split(/\s+/);
+			if ( !first){wifiInfos.push(wifiInfo);}else{first=false}
+			//console.log("NEW",row);
+			wifiInfo={address:row[4]};
+		}else if ( ret[i].indexOf("ESSID:")>=0){
+			wifiInfo.essid=row[1].trim().replaceAll('"','');
+		}else if ( ret[i].indexOf("IEEE 802.11")>=0){
+			wifiInfo.spec=row[1].trim();
+		}else if ( ret[i].indexOf("Quality")>=0){
+			wifiInfo.quality=ret[i].trim();
+		}else if ( ret[i].indexOf("Group Cipher")>=0){
+			wifiInfo.spec+=","+row[1].trim();
+		}else if ( ret[i].indexOf("Pairwise Ciphers")>=0){
+			wifiInfo.spec+=","+row[1].trim();
+		}else if ( ret[i].indexOf("Authentication Suites")>=0){
+			wifiInfo.spec+=row[1].trim();
+		}else if ( ret[i].indexOf("Frequency:")>=0){
+			wifiInfo.frequency=row[1].trim();
+		}else if ( ret[i].indexOf("Channel:")>=0){
+			wifiInfo.channel=row[1].trim();
+		}
+	}
+	wifiInfos.push(wifiInfo);
+	return ( {rawData:ret,wifiInfos:wifiInfos} );
+}
+
+
+async function WiFiPanel(){
+	var win = window.open("WiFiPanel.html", "wifiPanelWindow", "height=600,width=800");
+}
+
+FileManagerMessage={
+	ja:{
+		move:"移動",
+		view:"表示",
+		edit:"編集",
+		delete:"削除",
+		do:"実行",
+	},
+	en:{
+		move:"move",
+		view:"view",
+		edit:"edit",
+		delete:"delete",
+		do:"do",
+	}
+}
+
+async function showDir(){
+	//await pwd();
+	removeChildren(fileListTable);
+	var lsFiles = await lsal();
+	var files = lsFiles.files;
+	currentDirFiles=files;
+	//console.log(files);
+	var ul = document.createElement("ul");
+	ul.setAttribute("class","filelist");
+	for ( var i = 0 ; i < files.length ; i++ ){
+		var li= document.createElement("li");
+		var fname = files[i].name;
+		var fsize = Number(files[i].size);
+		var fnSpan = document.createElement("span");
+		//fnSpan.innerText=fname;
+		var fsizeS = fsize;
+		if (fsizeS > 1024*1024){
+			fsizeS = Math.floor(10*fsizeS/(1024*1024))/10+"M";
+		}else if (fsizeS > 1024 ){
+			fsizeS = Math.floor(10*fsizeS/1024)/10+"K";
+		}
+		fnSpan.innerHTML="<label title='" + fname +" : "+fsizeS+ "bytes'>" + fname + "</label>";
+		li.appendChild(fnSpan);
+		ul.appendChild(li);
+		
+		var actUl = document.createElement("ul");
+		if ( files[i].dir ){
+			var cdLi =document.createElement("li");
+			var cdSpan = document.createElement("span");
+			cdSpan.innerText=FileManagerMessage[lang].move;
+			cdSpan.addEventListener("click",function(fname){return function(){cd(fname)}}(fname));
+			cdLi.appendChild(cdSpan);
+			actUl.appendChild(cdLi);
+		} else {
+			var viewLi =document.createElement("li");
+			var viewSpan = document.createElement("span");
+			viewSpan.innerText=FileManagerMessage[lang].view;
+			viewSpan.addEventListener("click",function(fname,fsize,editFlg){return function(){showFile(fname,fsize,editFlg)}}(fname,fsize,false));
+			viewLi.appendChild(viewSpan);
+			actUl.appendChild(viewLi);
+			
+			
+			var editLi =document.createElement("li");
+			var editSpan = document.createElement("span");
+			editSpan.innerText=FileManagerMessage[lang].edit;
+			editSpan.addEventListener("click",function(fname,fsize,editFlg){return function(){showFile(fname,fsize,editFlg)}}(fname,fsize,true));
+			editLi.appendChild(editSpan);
+			actUl.appendChild(editLi);
+			
+			
+			var delLi =document.createElement("li");
+			var delSpan = document.createElement("span");
+			delSpan.innerText=FileManagerMessage[lang].delete;
+			delLi.appendChild(delSpan);
+			actUl.appendChild(delLi);
+			
+			var delCfUl = document.createElement("ul");
+			var delCfNgLi =document.createElement("li");
+			var delCfNgSpan = document.createElement("span");
+			delCfNgSpan.innerText="-";
+			delCfNgLi.appendChild(delCfNgSpan);
+			delCfUl.appendChild(delCfNgLi);
+			var delCfOkLi =document.createElement("li");
+			var delCfOkSpan = document.createElement("span");
+			delCfOkSpan.innerText=FileManagerMessage[lang].do;
+			delCfOkSpan.addEventListener("click",function(fname){return function(){remveAndList(fname)}}(fname));
+			delCfOkLi.appendChild(delCfOkSpan);
+			delCfUl.appendChild(delCfOkLi);
+			
+			delLi.appendChild(delCfUl);
+		}
+		li.appendChild(actUl);
+		//li.innerHTML="<span>"+fname+"</span>";
+	}
+	for ( var i = 0 ; i < 3 ; i++ ){
+		var li= document.createElement("li");
+		ul.appendChild(li);
+	}
+	fileListTable.appendChild(ul);
+	return (lsFiles.prompt);
+}
+
+
+async function cd(dir){
+	var ret = await portWritelnWaitfor(" cd "+dir,cmdPrompt);
+	ret = await showDir();
+	//console.log(ret);
+	currentDir = getDirFromPrompt(ret);
+	showCurrentDir();
+	return ( currentDir );
+}
+
+function getDirFromPrompt(promptStr){
+	var ret = (promptStr.trim()).substring(promptStr.lastIndexOf(":")+1,promptStr.lastIndexOf("$"));
+	//console.log("getDirFromPrompt:",promptStr,"  parse:",ret," caller:",getDirFromPrompt.caller);
+	return ( ret );
+}
+
+async function cdHome(){
+	await cd("");
+}
+
+function removeChildren(element){
+	while( element.firstChild ){
+	  element.removeChild( element.firstChild );
+	}
+}
+
+textFileExtensions=[".txt",".sh",".csv",".tsv",".js",".conf",".mjs",".md",".yml",".xml",".html",".htm",".json",".py",".php"];
+function isTextFile(path){
+	var fname = path.substring(path.lastIndexOf("/"));
+	var ans = true;
+	var f_ext = fname.substring(fname.lastIndexOf("."));
+	var f_name = fname.substring(0,fname.lastIndexOf("."));
+	
+	if (f_name == ""){
+		ans = true;
+	}else if ( textFileExtensions.indexOf(f_ext)==-1){
+		ans = false;
+	}
+	return(ans);
+}
+
+async function getFileSmall(path){ // 短いファイルでないとフロー制御できてなくて破綻する？ obsoluted
+	var ret = await portWritelnWaitfor(" base64 "+path,"\r\n"+cmdPrompt);
+	ret = getOutputLines(ret);
+	var ans="";
+	for ( var i = 1 ; i < ret.length -1 ; i++ ){
+		ans += ret[i];
+	}
+	ans = base64ToArrayBuffer(ans);
+	if ( isTextFile(path) ){
+		var txtString = new TextDecoder().decode(new Uint8Array(ans));
+		return ( txtString );
+	} else {
+		return ( ans );
+	}
+}
+
+
+var transferFileObj={};
+async function getFile(path ,size){
+	// 大きいファイルでも、取りこぼしなく取得可能なgetFileを開発
+	// moreを使って段階的に取得可能なものを作った。途中でキャンセルすることも可能なはず
+	// sizeは取得予定ファイルの参考情報(なくても良い)
+	transferFileObj.transferring = true;
+	var totalLines = -1;
+	if ( size ){
+		totalLines = Math.floor((4/3 * size) / 76);
+	}
+	if ( progress ){
+		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル'></input>");
+	}
+	var ans="";
+	var ret = await portWritelnWaitfor(" base64 "+path+" | sed '$a ENDLINE--More--' | more -50","more -50");
+	//console.log(ret);
+	ret = await portWriteWaitfor("","--More--");
+	//console.log(ret);
+	var lines = 0
+	while ( true ){
+		var rets = getOutputLines(ret);
+		//console.log(rets,rets[rets.length-1]);
+		for ( var i = 0 ; i < rets.length  ; i++ ){
+			if ( rets[i].indexOf("--More--")>=0){break;}
+			ans += rets[i];
+			++ lines;
+		}
+		if (ret.indexOf("ENDLINE")>=0){break;}
+		if(transferFileObj.halt==true){
+			await portWritelnWaitfor("q",cmdPrompt);
+			break;
+		}
+		if ( totalLines > 0 && progress){
+			progressText.innerText="Loading: " + Math.floor(100*lines/totalLines)+"%";
+		}
+		await sleep(5);
+		ret = await portWriteWaitfor(" ","--More--");
+	}
+	transferFileObj.transferring = false;
+	progress.innerText="";
+	if ( transferFileObj.halt==true){
+		transferFileObj.halt=false;
+		return (null);
+	}
+	console.log(ans.length);
+	ans = base64ToArrayBuffer(ans);
+	console.log(ans);
+	if ( isTextFile(path) ){
+		var txtString = new TextDecoder().decode(new Uint8Array(ans)); // arrayBuffer to string
+		return ( txtString );
+	} else {
+		return ( ans );
+	}
+}
+
+function haltTransferFile(){ // getFileを途中でキャンセルする
+	if (transferFileObj.transferring){
+		transferFileObj.halt=true;
+	}
+}
+
+function existFile(fileName){
+	for ( var fl of currentDirFiles ){
+		if (fileName == fl.name ){
+			return ( true );
+		}
+	}
+	return ( false );
+}
+
+async function showFile(fileName, size, editFlg){
+	var ans;
+	if ( existFile(fileName) && size > 0){
+		console.log("get file:",fileName, size);
+		ans = await getFile(fileName, size);
+	} else {
+		console.log("create new text");
+		ans = "";
+	}
+	if ( ans!=null ){
+		console.log(ans.length);
+		var win;
+		if ( typeof(ans)=="string"){
+			win = window.open("MonacoEditorWindow.html", "textSourceWindow", "height=600,width=800");
+			async function setEditorVal(val,editFlg){
+				await sleep(100);
+				if ( win.editor ){
+					console.log("send update opt val");
+					await sleep(200);
+					win.editSrc(val,fileName,currentDir,editFlg);
+					// editor.setValue(val);
+					// win.setFilePath(path,currentDir);
+					//if ( !editFlg){
+					//	win.disableSave();
+					//}
+				} else {
+					//console.log("retry...");
+					setEditorVal(val,editFlg);
+				}
+			}
+			setEditorVal(ans,editFlg);
+			//win.jsSrc = ans;
+		} else {
+			win = window.open("", "textSourceWindow", "height=500,width=500");
+			win.document.documentElement.innerHTML="データはバイナリのようです TBD : " + ans.byteLength+" bytes";
+		}
+	}
+}
+
+function createNewTxt(stat){
+	if ( stat == false ){
+		fileNameInputUI.style.display="none";
+		fileNameInput.value="";
+	} else if ( stat == true ){
+		var fileName=fileNameInput.value;
+		if ( existFile(fileName) ){
+			fileNameInput.value="ERR: already exists.";
+			setTimeout( function(){
+				fileNameInput.value="";
+			}, 1000);
+		} else {
+			fileNameInput.value="";
+			fileNameInputUI.style.display="none";
+			console.log("create new text:", fileName, currentDir);
+			showFile(fileName, 1, true)
+		}
+	} else {
+		fileNameInputUI.style.display="";
+	}
+}
+
+
+async function setEditedText(srcTxt, sourcePath, requestSave){
+	console.log("edited text:",srcTxt," sourcePath:",sourcePath);
+	if ( sourcePath.dir == currentDir ){
+		await saveFile(str2arrayBuffer(srcTxt),sourcePath.fileName);
+		await sleep(300);
+		await showDir();
+	} else {
+		console.warn("カレントディレクトリが変更されています・・ TBD");
+	}
+}
+
+function showCurrentDir(){
+	currentDirSpan.innerText=currentDir;
+}
+
+</script>
+
+
+<body>
+	<h1>Web Serial RPiZero Terminal</h1>
+	<p>Set up a raspberry pi os image <a href="https://gist.github.com/satakagi/dd34c29b0192540080681e2443258282" target="_blank">based on this page</a>, and connect to it using Chrome or Edge.</p>
+
+	<table border="1">
+	<tr><td colspan="2">
+	<button id="connectBtn" onclick="autoLogInPiZero()">Connect and Login PiZero</button> 
+	<span id="cmdBtns" style="display:none">
+		<button id="closeBtn" onclick="closeConnection()">Close Connection</button> 
+		<button onclick="cdHome()">HOME</button> 
+		<button onclick="showDir()">ls -al</button> 
+		<button onclick="WiFiPanel()">wifi panel</button> 
+		upload:<input id="fileUpl" type="file" id="uploadFile" onchange="uploadFile(event)" /><span id="progress"></span>
+		<!--<label for="fileUpl" style="display: inline-block;position: relative;font-size: 14px;padding: 3px 20px;border-radius: 3px;transition: all 0.5s;background-color: #1877F2;color: #fff;">ファイルを添付</label>-->
+		<button onclick="createNewTxt()">createNewText</button> <span id="fileNameInputUI" style="display:none"><input type="text" id="fileNameInput" ></input><button onclick="createNewTxt(true)">create</button><button onclick="createNewTxt(false)">cancel</button></span><span id="currentDirSpan" style="font-size:11px"></span>
+	</span>
+
+	</td></tr>
+	<tr>
+	<td>
+	<div id="terminal" style="width:740px;height:408px"></div>
+	</td>
+	<td style="width:200px;height:420px" >
+		<div id="fileListTable" class="filelistdiv">
+		</div>
+	</td>
+	</tr>
+	</table>
+</body>
+</html>
