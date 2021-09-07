@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+<title>CHIRIMEN panel for Raspberry Pi Zero webSerialConsole</title>
+<meta charset="utf-8"></meta>
+</head>
+<script>
+onload=async function(){
+	portWritelnWaitfor = window.opener.portWritelnWaitfor;
+	getOutputLines = function (inp){
+		var ret = window.opener.getOutputLines(inp);
+		console.log( ret );
+		return ( ret );
+	};
+	cmdPrompt = window.opener.cmdPrompt;
+	mv = window.opener.mv;
+	cp = window.opener.cp;
+}
+
+var nodeVersion="v14.17.6";
+async function setupChirimen(){
+	var ret;
+	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("mkdir chirimenSetup", cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("cd chirimenSetup", cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("VERSION="+nodeVersion, cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("DISTRO=linux-armv6l", cmdPrompt));
+	messageDiv.innerHTML="NOW GETTING NODE.JS RUNTIME";
+	ret = getOutputLines(await portWritelnWaitfor("wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz", cmdPrompt, 200000));
+	ret = getOutputLines(await portWritelnWaitfor("sudo mkdir -p /usr/local/lib/nodejs", cmdPrompt));
+	
+	messageDiv.innerHTML="NOW EXTRACTING NODE.JS RUNTIME";
+	ret = getOutputLines(await portWritelnWaitfor("sudo tar -xJvf node-$VERSION-$DISTRO.tar.xz -C /usr/local/lib/nodejs", cmdPrompt, 200000));
+	
+	ret = getOutputLines(await portWritelnWaitfor('echo -n -e "# Nodejs\nVERSION=' + nodeVersion + '\nDISTRO=linux-armv6l\n\nexport PATH=/usr/local/lib/nodejs/node-$VERSION-$DISTRO/bin:$PATH\n" | tee -a ~/.profile', cmdPrompt));
+	
+	ret = getOutputLines(await portWritelnWaitfor('. ~/.profile', cmdPrompt));
+	
+	messageDiv.innerHTML="NODE.JS RUNTIME INSTALLATION COMPLETED!";
+	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor('node -v', cmdPrompt, 10000));
+	var nodeV = "Version:<br> node.js:"+ret[1];
+	ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
+	nodeV += "<br>" + " npm:" + ret[1];
+	messageDiv.innerHTML=nodeV + "<br><br>NEXT building CHIRIMEN environment and its libraries on ~/myApp";
+	ret = getOutputLines(await portWritelnWaitfor("mkdir myApp", cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("cd myApp", cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/package.json", cmdPrompt, 10000));
+	ret = getOutputLines(await portWritelnWaitfor("npm install", cmdPrompt, 300000));
+	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+	messageDiv.innerHTML="CONGRATURATIONS. setup completed!<br>Your prototyping directory is ~/myApp";
+	
+}
+
+async function i2cdetect(){
+	var ret = getOutputLines(await portWritelnWaitfor(" i2cdetect -y -r 1",cmdPrompt));
+	var ht = "<pre><code>     ";
+	for ( var i = 1 ; i < ret.length - 1 ; i++ ){
+		ht += ret[i]+"\n";
+	}
+	ht+="</pre></code>";
+	messageDiv.innerHTML=ht;
+}
+
+
+</script>
+<body>
+
+<input type="button" onclick="setupChirimen()" value="setup CHIRIMEN"></input>
+<input type="button" onclick="i2cdetect()" value="i2cdetect"></input>
+<div id="messageDiv"></div>
+</body>
+</html>

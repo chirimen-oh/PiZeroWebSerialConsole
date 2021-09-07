@@ -592,6 +592,10 @@ async function WiFiPanel(){
 	var win = window.open("WiFiPanel.html", "wifiPanelWindow", "height=600,width=800");
 }
 
+function CHIRIMENPanel(){
+	var win = window.open("chirimenPanel.html", "chirimenPanel", "height=500,width=800");
+}
+
 FileManagerMessage={
 	ja:{
 		move:"移動",
@@ -911,6 +915,7 @@ function showCurrentDir(){
 		<button onclick="cdHome()">HOME</button> 
 		<button onclick="showDir()">ls -al</button> 
 		<button onclick="WiFiPanel()">wifi panel</button> 
+		<button onclick="CHIRIMENPanel()">CHIRIMEN panel</button> 
 		upload:<input id="fileUpl" type="file" id="uploadFile" onchange="uploadFile(event)" /><span id="progress"></span>
 		<!--<label for="fileUpl" style="display: inline-block;position: relative;font-size: 14px;padding: 3px 20px;border-radius: 3px;transition: all 0.5s;background-color: #1877F2;color: #fff;">ファイルを添付</label>-->
 		<button onclick="createNewTxt()">createNewText</button> <span id="fileNameInputUI" style="display:none"><input type="text" id="fileNameInput" ></input><button onclick="createNewTxt(true)">create</button><button onclick="createNewTxt(false)">cancel</button></span><span id="currentDirSpan" style="font-size:11px"></span>
