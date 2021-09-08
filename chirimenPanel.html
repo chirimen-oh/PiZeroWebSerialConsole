@@ -5,7 +5,9 @@
 <meta charset="utf-8"></meta>
 </head>
 <script>
+var appDir = "~/myApp"; // 絶対パス
 onload=async function(){
+	window.addEventListener("message", receiveMessage, false);
 	portWritelnWaitfor = window.opener.portWritelnWaitfor;
 	getOutputLines = function (inp){
 		var ret = window.opener.getOutputLines(inp);
@@ -15,7 +17,9 @@ onload=async function(){
 	cmdPrompt = window.opener.cmdPrompt;
 	mv = window.opener.mv;
 	cp = window.opener.cp;
+	showDir = window.opener.showDir;
 }
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 
 var nodeVersion="v14.17.6";
 async function setupChirimen(){
@@ -42,14 +46,26 @@ async function setupChirimen(){
 	var nodeV = "Version:<br> node.js:"+ret[1];
 	ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
 	nodeV += "<br>" + " npm:" + ret[1];
-	messageDiv.innerHTML=nodeV + "<br><br>NEXT building CHIRIMEN environment and its libraries on ~/myApp";
-	ret = getOutputLines(await portWritelnWaitfor("mkdir myApp", cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("cd myApp", cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/package.json", cmdPrompt, 10000));
-	ret = getOutputLines(await portWritelnWaitfor("npm install", cmdPrompt, 300000));
-	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
-	messageDiv.innerHTML="CONGRATURATIONS. setup completed!<br>Your prototyping directory is ~/myApp";
 	
+	messageDiv.innerHTML=nodeV + "<br><br>NEXT building CHIRIMEN environment and its libraries on "+appDir;
+	
+	await buildChirimenDevDir(appDir);
+	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+	await showDir();
+	messageDiv.innerHTML="CONGRATURATIONS. setup completed!<br>Your prototyping directory is "+ appDir;
+	
+}
+
+async function buildChirimenDevDir(targetDir){
+	if ( !targetDir){
+		targetDir = appDir;
+	}
+	var ret;
+	ret = getOutputLines(await portWritelnWaitfor("mkdir "+targetDir, cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("cd "+ targetDir, cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/package.json", cmdPrompt, 10000));
+	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/esm-examples/remote_example4/RelayServer.js", cmdPrompt, 10000));
+	ret = getOutputLines(await portWritelnWaitfor("npm install", cmdPrompt, 300000));
 }
 
 async function i2cdetect(){
@@ -62,12 +78,32 @@ async function i2cdetect(){
 	messageDiv.innerHTML=ht;
 }
 
+function examplePanel(){
+	var ifr = document.createElement("iframe");
+	ifr.style.width="100%";
+	ifr.style.height="100%";
+//	ifr.src="../tmp/e_index.html";
+	ifr.src="https://tutorial.chirimen.org/pizero/esm-examples/";
+	messageDiv.innerHTML="";
+	messageDiv.appendChild(ifr);
+}
+
+async function receiveMessage(event){
+	console.log("get message:",event);
+	if ( event.data.req && event.data.req=="getSrc"){
+		var ret = getOutputLines(await portWritelnWaitfor("cd "+ appDir, cmdPrompt));
+		var fileName = "main-" +  event.data.exampleId + ".js";
+		ret = getOutputLines(await portWritelnWaitfor('wget '+event.data.url+ " -O "+ fileName, cmdPrompt, 10000));
+		await showDir();
+	}
+}
 
 </script>
 <body>
 
 <input type="button" onclick="setupChirimen()" value="setup CHIRIMEN"></input>
 <input type="button" onclick="i2cdetect()" value="i2cdetect"></input>
-<div id="messageDiv"></div>
+<input type="button" onclick="examplePanel()" value="Get Examples"></input>
+<div id="messageDiv" style="width:100%;height:400px"></div>
 </body>
 </html>
