@@ -8,6 +8,7 @@ PCのUSB端子に接続した[Raspberry Pi Zero](https://www.raspberrypi.org/pro
 * 簡易なファイルマネージャ機能があり、PCとRaspberry Piとの間でファイルの送受信ができます。
 * [Monaco Editor](https://microsoft.github.io/monaco-editor/)を搭載、テキストファイルの編集ができます。
 * [Raspberry Pi Zero W](https://www.raspberrypi.org/products/raspberry-pi-zero-w/)のWiFi設定のための専用UIがあります。
+* [Node.jsを使用したCHIRIMEN](https://tutorial.chirimen.org/pizero/)のための専用UIを持ちます。
 
 ## 準備
 
