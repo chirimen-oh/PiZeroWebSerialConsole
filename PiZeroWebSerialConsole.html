@@ -215,6 +215,7 @@ async function startTermLoop(){
 						clearTimeout(waitForSerialIn.TimeOutID);
 						waitForSerialIn.RegExp = null;
 						waitForSerialIn.CBF = null;
+						waitForSerialIn.TimeOutID=null;
 						waitForSerialIn.inputValue="";
 					}
 					if (value) {
@@ -277,6 +278,13 @@ function portWriteln(data){
 
 // 書き出して、指定した文字列の返却を待つ非同期関数
 function portWriteWaitfor(writeData, waitForRegExp, timeOutMsOptional){
+	if ( waitForRegExp == null){
+		throw 'waitForRegExp is not.';
+	}
+	if ( waitForSerialIn.RegExp != null ){
+		console.warn("Now traansmitting skip");
+		return;
+	}
 	if ( typeof(waitForRegExp)=="string"){
 		waitForRegExp = new RegExp(waitForRegExp);
 		//console.log("RE:",waitForRegExp);
@@ -294,6 +302,7 @@ function portWriteWaitfor(writeData, waitForRegExp, timeOutMsOptional){
 			waitForSerialIn.inputValue="";
 			waitForSerialIn.CBF=null;
 			waitForSerialIn.Str=null;
+			waitForSerialIn.RegExp=null;
 			if ( failCbf ){
 				failCbf();
 			}
@@ -386,6 +395,9 @@ async function autoLogInPiZero(noRetry){ // ログイン処理
 	console.log("success");
 	await sleep(300);
 	await portWritelnWaitfor(" HISTCONTROL=ignoreboth",cmdPrompt); // 頭にスペースを付けたコマンド&連続したコマンドはhistoryに残さないようにする
+	if ( lang=="ja"){
+		await portWritelnWaitfor(" sudo timedatectl set-timezone Asia/Tokyo",cmdPrompt);
+	}
 	await pwd();
 	await sleep(100);
 	await cdHome();
@@ -494,6 +506,10 @@ function arrayBuffer2str(buf){
 
 
 async function saveFile(buffer , fileName){
+	if ( transferFileObj.transferring ){
+		console.warn("NOW File Transferring exit.");
+		return;
+	}
 	var base64 = arrayBufferToBase64(buffer);
 	//var ua = new Uint8Array(buffer);
 	// https://pisuke-code.com/js-soln-of-maximum-call-stack/
@@ -519,15 +535,20 @@ async function saveFile(buffer , fileName){
 		}
 		var line = base64.substring(i*lineLength, (i+1)*lineLength);
 		await portWriteWaitfor(line+"\n","\n");
+		await sleep(1);
 		if ( progress){
 			progressText.innerText=Math.floor(100 * i/Math.floor(base64.length / lineLength))+"% completed";
 		}
 	}
 	progress.innerText="";
 	//portWrite(base64);
+	await sleep(50);
 	portWrite(ctrld);
+	await sleep(10);
 	portWriteln("");
+	await sleep(10);
 	portWriteWaitfor("\n","\\$");
+	await sleep(10);
 	transferFileObj.transferring = false;
 }
 
@@ -759,6 +780,10 @@ async function getFile(path ,size){
 	// 大きいファイルでも、取りこぼしなく取得可能なgetFileを開発
 	// moreを使って段階的に取得可能なものを作った。途中でキャンセルすることも可能なはず
 	// sizeは取得予定ファイルの参考情報(なくても良い)
+	if ( transferFileObj.transferring ){
+		console.warn("NOW File Transferring exit.");
+		return;
+	}
 	transferFileObj.transferring = true;
 	var totalLines = -1;
 	if ( size ){
