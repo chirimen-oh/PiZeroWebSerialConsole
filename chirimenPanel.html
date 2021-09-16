@@ -24,30 +24,40 @@ const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 var nodeVersion="v14.17.6";
 async function setupChirimen(){
 	var ret;
+	
 	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("mkdir chirimenSetup", cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("cd chirimenSetup", cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("VERSION="+nodeVersion, cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("DISTRO=linux-armv6l", cmdPrompt));
-	messageDiv.innerHTML="NOW GETTING NODE.JS RUNTIME";
-	ret = getOutputLines(await portWritelnWaitfor("wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz", cmdPrompt, 200000));
-	ret = getOutputLines(await portWritelnWaitfor("sudo mkdir -p /usr/local/lib/nodejs", cmdPrompt));
-	
-	messageDiv.innerHTML="NOW EXTRACTING NODE.JS RUNTIME";
-	ret = getOutputLines(await portWritelnWaitfor("sudo tar -xJvf node-$VERSION-$DISTRO.tar.xz -C /usr/local/lib/nodejs", cmdPrompt, 200000));
-	
-	ret = getOutputLines(await portWritelnWaitfor('echo -n -e "# Nodejs\nVERSION=' + nodeVersion + '\nDISTRO=linux-armv6l\n\nexport PATH=/usr/local/lib/nodejs/node-$VERSION-$DISTRO/bin:$PATH\n" | tee -a ~/.profile', cmdPrompt));
-	
-	ret = getOutputLines(await portWritelnWaitfor('. ~/.profile', cmdPrompt));
-	
-	messageDiv.innerHTML="NODE.JS RUNTIME INSTALLATION COMPLETED!";
-	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+	var nodeV;
 	ret = getOutputLines(await portWritelnWaitfor('node -v', cmdPrompt, 10000));
-	var nodeV = "Version:<br> node.js:"+ret[1];
-	ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
-	nodeV += "<br>" + " npm:" + ret[1];
-	
+	if ( ret[1].indexOf("-bash:")==0 ){
+		ret = getOutputLines(await portWritelnWaitfor("mkdir chirimenSetup", cmdPrompt));
+		ret = getOutputLines(await portWritelnWaitfor("cd chirimenSetup", cmdPrompt));
+		ret = getOutputLines(await portWritelnWaitfor("VERSION="+nodeVersion, cmdPrompt));
+		ret = getOutputLines(await portWritelnWaitfor("DISTRO=linux-armv6l", cmdPrompt));
+		messageDiv.innerHTML="NOW GETTING NODE.JS RUNTIME";
+		ret = getOutputLines(await portWritelnWaitfor("wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz", cmdPrompt, 200000));
+		ret = getOutputLines(await portWritelnWaitfor("sudo mkdir -p /usr/local/lib/nodejs", cmdPrompt));
+		
+		messageDiv.innerHTML="NOW EXTRACTING NODE.JS RUNTIME";
+		ret = getOutputLines(await portWritelnWaitfor("sudo tar -xJvf node-$VERSION-$DISTRO.tar.xz -C /usr/local/lib/nodejs", cmdPrompt, 200000));
+		
+		ret = getOutputLines(await portWritelnWaitfor('echo -n -e "# Nodejs\nVERSION=' + nodeVersion + '\nDISTRO=linux-armv6l\n\nexport PATH=/usr/local/lib/nodejs/node-$VERSION-$DISTRO/bin:$PATH\n" | tee -a ~/.profile', cmdPrompt));
+		
+		ret = getOutputLines(await portWritelnWaitfor('. ~/.profile', cmdPrompt));
+		
+		messageDiv.innerHTML="NODE.JS RUNTIME INSTALLATION COMPLETED!";
+		ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+		ret = getOutputLines(await portWritelnWaitfor('node -v', cmdPrompt, 10000));
+		nodeV = "Version:<br> node.js:"+ret[1];
+		ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
+		nodeV += "<br>" + " npm:" + ret[1];
+		
+	} else {
+		nodeV = "Version:<br> node.js:"+ret[1];
+		ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
+		nodeV += "<br>" + " npm:" + ret[1];
+	}
 	messageDiv.innerHTML=nodeV + "<br><br>NEXT building CHIRIMEN environment and its libraries on "+appDir;
+	
 	
 	await buildChirimenDevDir(appDir);
 	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));

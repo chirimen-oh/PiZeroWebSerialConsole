@@ -26,6 +26,7 @@ async function wifiStat(){
 	var ret = getOutputLines(await portWritelnWaitfor(" ifconfig",cmdPrompt));
 	var wdf=false;
 	var ipInfo="wlan0: ",wlInfo="";
+	var ipaddr;
 	for ( var line of ret){
 		if ( line.indexOf("wlan0:")>=0){
 			wdf=true;
@@ -35,12 +36,14 @@ async function wifiStat(){
 		if ( wdf){
 			if ( line.indexOf("inet ")>=0){
 				ipInfo+=line+"\n";
+				ipaddr=line;
 				break;
 			}
 		}
 	}
+	
 	wdf=false;
-	var ret = getOutputLines(await portWritelnWaitfor(" iwconfig",cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor(" iwconfig",cmdPrompt));
 	for ( var line of ret){
 		if ( line.indexOf("wlan0")>=0){
 			wdf=true;
@@ -53,8 +56,22 @@ async function wifiStat(){
 	}
 	console.log("ipInfo:",ipInfo);
 	console.log("wlInfo:",wlInfo);
-	infoPre.innerText=ipInfo+wlInfo;
 	
+	ret = getOutputLines(await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org",cmdPrompt));
+	var pingok=false;
+	if ( ret[ret.length-2].indexOf("rtt")>=0){
+		pingok=true;
+	}
+	console.log("ping:",ret[ret.length-2], pingok);
+	
+	infoPre.innerText=ipInfo+wlInfo;
+	if ( pingok ){
+		infoPre.insertAdjacentHTML("beforeend",'\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n');
+	}
+	if ( ipaddr ){
+		ipaddr=ipaddr.substring(ipaddr.indexOf("inet ")+4,ipaddr.indexOf("netmask")).trim();
+		infoPre.insertAdjacentHTML("beforeend",'\n<span style="color:blue;font-size:18px">Raspberry Pi\'s IP Address: '+ipaddr+'</span>');
+	}
 }
 
 async function wifiScan(){
