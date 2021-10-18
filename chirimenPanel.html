@@ -74,7 +74,7 @@ async function buildChirimenDevDir(targetDir){
 	ret = getOutputLines(await portWritelnWaitfor("mkdir "+targetDir, cmdPrompt));
 	ret = getOutputLines(await portWritelnWaitfor("cd "+ targetDir, cmdPrompt));
 	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/package.json", cmdPrompt, 10000));
-	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/esm-examples/remote_example4/RelayServer.js", cmdPrompt, 10000));
+	ret = getOutputLines(await portWritelnWaitfor("wget https://chirimen.org/remote-connection/js/beta/RelayServer.js", cmdPrompt, 10000));
 	ret = getOutputLines(await portWritelnWaitfor("npm install", cmdPrompt, 300000));
 }
 
