@@ -398,12 +398,19 @@ async function autoLogInPiZero(noRetry){ // ログイン処理
 	if ( lang=="ja"){
 		await portWritelnWaitfor(" sudo timedatectl set-timezone Asia/Tokyo",cmdPrompt);
 	}
+	await sleep(100);
+	var date = new Date();
+	var dateCmd = " sudo date " + pad2(date.getMonth()+1) + pad2(date.getDate())+pad2(date.getHours()) + pad2(date.getMinutes()) + date.getFullYear();
+	await portWritelnWaitfor(dateCmd, cmdPrompt);
+	
 	await pwd();
 	await sleep(100);
 	await cdHome();
 	connectBtn.style.display="none";
 	cmdBtns.style.display="";
 }
+
+function pad2( inp ){return ( ("0"+inp).slice(-2));}
 
 async function closeConnection(){
 	await terminateConnection();
