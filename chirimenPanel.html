@@ -223,7 +223,19 @@
     async function setForeverApp(appName) {
       var ret = getOutputLines(
         await portWritelnWaitfor(
-          ` forever start -w ${escapePath(appName)}`,
+          ` bash -ex <<'EOF'
+tee forever.service <<SERVICE
+[Service]
+Type=forking
+ExecStart=bash -c "forever start -w ${escapePath(appName)}"
+WorkingDirectory=$(pwd)
+[Install]
+WantedBy=default.target
+SERVICE
+systemctl --user link "$(pwd)/forever.service"
+systemctl --user enable forever.service
+systemctl --user start forever.service
+EOF`,
           cmdPrompt,
           20000
         )
