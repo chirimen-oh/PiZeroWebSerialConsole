@@ -530,7 +530,7 @@ async function saveFile(buffer , fileName){
 	//console.log(base64);
 
 	if ( progress ){
-		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル'></input>");
+		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />");
 	}
 
 	transferFileObj.transferring = true;
@@ -799,7 +799,7 @@ async function getFile(path ,size){
 		totalLines = Math.floor((4/3 * size) / 76);
 	}
 	if ( progress ){
-		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル'></input>");
+		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />");
 	}
 	var ans="";
 	var ret = await portWritelnWaitfor(" base64 "+path+" | sed '$a ENDLINE--More--' | more -50","more -50");
@@ -953,7 +953,7 @@ function showCurrentDir(){
 		<button onclick="CHIRIMENPanel()">CHIRIMEN panel</button>
 		upload:<input id="fileUpl" type="file" id="uploadFile" onchange="uploadFile(event)" /><span id="progress"></span>
 		<!--<label for="fileUpl" style="display: inline-block;position: relative;font-size: 14px;padding: 3px 20px;border-radius: 3px;transition: all 0.5s;background-color: #1877F2;color: #fff;">ファイルを添付</label>-->
-		<button onclick="createNewTxt()">createNewText</button> <span id="fileNameInputUI" style="display:none"><input type="text" id="fileNameInput" ></input><button onclick="createNewTxt(true)">create</button><button onclick="createNewTxt(false)">cancel</button></span><span id="currentDirSpan" style="font-size:11px"></span>
+		<button onclick="createNewTxt()">createNewText</button> <span id="fileNameInputUI" style="display:none"><input type="text" id="fileNameInput" /><button onclick="createNewTxt(true)">create</button><button onclick="createNewTxt(false)">cancel</button></span><span id="currentDirSpan" style="font-size:11px"></span>
 	</span>
 
 	</td></tr>
