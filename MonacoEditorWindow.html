@@ -112,7 +112,7 @@
     /**
 function setFilePath(fileName,dir){
 	sourcePath={fileName:fileName,dir:dir};
-	fileNameSpan.innerText=sourcePath.fileName;
+	fileNameSpan.textContent=sourcePath.fileName;
 }
 function getFilePath(){
 	return(sourcePath);
@@ -130,7 +130,7 @@ function getFilePath(){
         fileNameSpan.style.color = "red";
       });
       sourcePath = { fileName: fileName, dir: currentDir };
-      fileNameSpan.innerText = sourcePath.fileName;
+      fileNameSpan.textContent = sourcePath.fileName;
       if (!editFlg) {
         await sleep(100);
         disableSave();

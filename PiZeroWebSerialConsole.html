@@ -596,12 +596,12 @@ History
         await portWriteWaitfor(line + "\n", "\n");
         await sleep(1);
         if (progress) {
-          progressText.innerText =
+          progressText.textContent =
             Math.floor((100 * i) / Math.floor(base64.length / lineLength)) +
             "% completed";
         }
       }
-      progress.innerText = "";
+      progress.textContent = "";
       //portWrite(base64);
       await sleep(50);
       portWrite(ctrld);
@@ -722,7 +722,7 @@ History
         var fname = files[i].name;
         var fsize = Number(files[i].size);
         var fnSpan = document.createElement("span");
-        //fnSpan.innerText=fname;
+        //fnSpan.textContent=fname;
         var fsizeS = fsize;
         if (fsizeS > 1024 * 1024) {
           fsizeS = Math.floor((10 * fsizeS) / (1024 * 1024)) / 10 + "M";
@@ -744,7 +744,7 @@ History
         if (files[i].dir) {
           var cdLi = document.createElement("li");
           var cdSpan = document.createElement("span");
-          cdSpan.innerText = FileManagerMessage[lang].move;
+          cdSpan.textContent = FileManagerMessage[lang].move;
           cdSpan.addEventListener(
             "click",
             (function (fname) {
@@ -758,7 +758,7 @@ History
         } else {
           var viewLi = document.createElement("li");
           var viewSpan = document.createElement("span");
-          viewSpan.innerText = FileManagerMessage[lang].view;
+          viewSpan.textContent = FileManagerMessage[lang].view;
           viewSpan.addEventListener(
             "click",
             (function (fname, fsize, editFlg) {
@@ -772,7 +772,7 @@ History
 
           var editLi = document.createElement("li");
           var editSpan = document.createElement("span");
-          editSpan.innerText = FileManagerMessage[lang].edit;
+          editSpan.textContent = FileManagerMessage[lang].edit;
           editSpan.addEventListener(
             "click",
             (function (fname, fsize, editFlg) {
@@ -786,19 +786,19 @@ History
 
           var delLi = document.createElement("li");
           var delSpan = document.createElement("span");
-          delSpan.innerText = FileManagerMessage[lang].delete;
+          delSpan.textContent = FileManagerMessage[lang].delete;
           delLi.appendChild(delSpan);
           actUl.appendChild(delLi);
 
           var delCfUl = document.createElement("ul");
           var delCfNgLi = document.createElement("li");
           var delCfNgSpan = document.createElement("span");
-          delCfNgSpan.innerText = "-";
+          delCfNgSpan.textContent = "-";
           delCfNgLi.appendChild(delCfNgSpan);
           delCfUl.appendChild(delCfNgLi);
           var delCfOkLi = document.createElement("li");
           var delCfOkSpan = document.createElement("span");
-          delCfOkSpan.innerText = FileManagerMessage[lang].do;
+          delCfOkSpan.textContent = FileManagerMessage[lang].do;
           delCfOkSpan.addEventListener(
             "click",
             (function (fname) {
@@ -945,14 +945,14 @@ History
           break;
         }
         if (totalLines > 0 && progress) {
-          progressText.innerText =
+          progressText.textContent =
             "Loading: " + Math.floor((100 * lines) / totalLines) + "%";
         }
         await sleep(5);
         ret = await portWriteWaitfor(" ", "--More--");
       }
       transferFileObj.transferring = false;
-      progress.innerText = "";
+      progress.textContent = "";
       if (transferFileObj.halt == true) {
         transferFileObj.halt = false;
         return null;
@@ -1062,7 +1062,7 @@ History
     }
 
     function showCurrentDir() {
-      currentDirSpan.innerText = currentDir;
+      currentDirSpan.textContent = currentDir;
     }
   </script>
 

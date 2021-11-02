@@ -239,13 +239,13 @@
       disableForeverAppTable(true);
       console.log("changeForeverApp:", apName);
       if (apName == "StopAllApps") {
-        subMsgDiv.innerText = "Start to stop the resident apps.";
+        subMsgDiv.textContent = "Start to stop the resident apps.";
         await stopAllForeverApp(apName);
         await delForeverRebootCron(apName);
       } else {
-        subMsgDiv.innerText = "Start changing resident apps. Ph. 1/2";
+        subMsgDiv.textContent = "Start changing resident apps. Ph. 1/2";
         await stopAllForeverApp();
-        subMsgDiv.innerText = "Start changing resident apps. Ph. 2/2";
+        subMsgDiv.textContent = "Start changing resident apps. Ph. 2/2";
         await setForeverApp(apName);
         await setForeverRebootCron(apName);
       }
@@ -323,7 +323,7 @@
         tr = document.createElement("tr");
         var td1 = document.createElement("td");
         var td2 = document.createElement("td");
-        td2.innerText = app;
+        td2.textContent = app;
         var td3 = document.createElement("td");
         td3.innerHTML =
           '<input type="radio" name="runApp" value="' +
@@ -335,7 +335,7 @@
         tbl.appendChild(tr);
         trs[app] = tr;
       }
-      subMsgDiv.innerText = "Checking running apps";
+      subMsgDiv.textContent = "Checking running apps";
       messageDiv.appendChild(tbl);
       showForeverApp(trs);
     }
@@ -345,7 +345,7 @@
       var ret = getOutputLines(
         await portWritelnWaitfor(" forever list --plain", cmdPrompt, 20000)
       );
-      subMsgDiv.innerText = "-";
+      subMsgDiv.textContent = "-";
       var isRunning = false;
       var fpNames = [];
       for (var i = 0; i < ret.length - 1; i++) {
@@ -375,7 +375,7 @@
         for (var fpName of fpNames) {
           console.log(fpName, trs[fpName], trs);
           if (trs[fpName]) {
-            trs[fpName].children[0].innerText = "RUNNING";
+            trs[fpName].children[0].textContent = "RUNNING";
             trs[fpName].children[2].firstElementChild.checked = true;
           }
         }

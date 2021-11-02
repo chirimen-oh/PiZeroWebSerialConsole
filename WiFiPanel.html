@@ -68,7 +68,7 @@
       }
       console.log("ping:", ret[ret.length - 2], pingok);
 
-      infoPre.innerText = ipInfo + wlInfo;
+      infoPre.textContent = ipInfo + wlInfo;
       if (pingok) {
         infoPre.insertAdjacentHTML(
           "beforeend",
@@ -141,7 +141,7 @@
         }
         str += "\n";
       }
-      infoPre.innerText = str;
+      infoPre.textContent = str;
     }
 
     async function setWiFi() {
@@ -160,7 +160,7 @@
       WiFiSet = WiFiSet.replace("{SSID}", ssid);
       WiFiSet = WiFiSet.replace("{PASS}", pass);
       console.log(WiFiSet);
-      infoPre.innerText = WiFiSet;
+      infoPre.textContent = WiFiSet;
 
       await saveFile(str2arrayBuffer(WiFiSet), "wpa_supplicant.conf");
       await cp("wpa_supplicant.conf", "/boot/wpa_supplicant.conf", true);
