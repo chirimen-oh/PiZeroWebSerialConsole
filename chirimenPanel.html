@@ -1,275 +1,397 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-<title>CHIRIMEN panel for Raspberry Pi Zero webSerialConsole</title>
-<meta charset="utf-8" />
-</head>
-<script>
-var appDir = "~/myApp"; // 絶対パス
-var absAppDir ="/home/pi/myApp/";
+  <head>
+    <title>CHIRIMEN panel for Raspberry Pi Zero webSerialConsole</title>
+    <meta charset="utf-8" />
+  </head>
+  <script>
+    var appDir = "~/myApp"; // 絶対パス
+    var absAppDir = "/home/pi/myApp/";
 
-onload=async function(){
-	window.addEventListener("message", receiveMessage, false);
-	portWritelnWaitfor = window.opener.portWritelnWaitfor;
-	getOutputLines = function (inp){
-		var ret = window.opener.getOutputLines(inp);
-		console.log( ret );
-		return ( ret );
-	};
-	cmdPrompt = window.opener.cmdPrompt;
-	mv = window.opener.mv;
-	cp = window.opener.cp;
-	showDir = window.opener.showDir;
-}
-const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+    onload = async function () {
+      window.addEventListener("message", receiveMessage, false);
+      portWritelnWaitfor = window.opener.portWritelnWaitfor;
+      getOutputLines = function (inp) {
+        var ret = window.opener.getOutputLines(inp);
+        console.log(ret);
+        return ret;
+      };
+      cmdPrompt = window.opener.cmdPrompt;
+      mv = window.opener.mv;
+      cp = window.opener.cp;
+      showDir = window.opener.showDir;
+    };
+    const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
 
-var nodeVersion="v14.17.6";
-async function setupChirimen(){
-	var ret;
+    var nodeVersion = "v14.17.6";
+    async function setupChirimen() {
+      var ret;
 
-	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
-	var nodeV;
-	ret = getOutputLines(await portWritelnWaitfor('node -v', cmdPrompt, 10000));
-	if ( ret[1].indexOf("-bash:")==0 ){
-		ret = getOutputLines(await portWritelnWaitfor("mkdir chirimenSetup", cmdPrompt));
-		ret = getOutputLines(await portWritelnWaitfor("cd chirimenSetup", cmdPrompt));
-		ret = getOutputLines(await portWritelnWaitfor("VERSION="+nodeVersion, cmdPrompt));
-		ret = getOutputLines(await portWritelnWaitfor("DISTRO=linux-armv6l", cmdPrompt));
-		messageDiv.innerHTML="NOW GETTING NODE.JS RUNTIME";
-		ret = getOutputLines(await portWritelnWaitfor("wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz", cmdPrompt, 200000));
-		ret = getOutputLines(await portWritelnWaitfor("sudo mkdir -p /usr/local/lib/nodejs", cmdPrompt));
+      ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+      var nodeV;
+      ret = getOutputLines(
+        await portWritelnWaitfor("node -v", cmdPrompt, 10000)
+      );
+      if (ret[1].indexOf("-bash:") == 0) {
+        ret = getOutputLines(
+          await portWritelnWaitfor("mkdir chirimenSetup", cmdPrompt)
+        );
+        ret = getOutputLines(
+          await portWritelnWaitfor("cd chirimenSetup", cmdPrompt)
+        );
+        ret = getOutputLines(
+          await portWritelnWaitfor("VERSION=" + nodeVersion, cmdPrompt)
+        );
+        ret = getOutputLines(
+          await portWritelnWaitfor("DISTRO=linux-armv6l", cmdPrompt)
+        );
+        messageDiv.innerHTML = "NOW GETTING NODE.JS RUNTIME";
+        ret = getOutputLines(
+          await portWritelnWaitfor(
+            "wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz",
+            cmdPrompt,
+            200000
+          )
+        );
+        ret = getOutputLines(
+          await portWritelnWaitfor(
+            "sudo mkdir -p /usr/local/lib/nodejs",
+            cmdPrompt
+          )
+        );
 
-		messageDiv.innerHTML="NOW EXTRACTING NODE.JS RUNTIME";
-		ret = getOutputLines(await portWritelnWaitfor("sudo tar -xJvf node-$VERSION-$DISTRO.tar.xz -C /usr/local/lib/nodejs", cmdPrompt, 200000));
+        messageDiv.innerHTML = "NOW EXTRACTING NODE.JS RUNTIME";
+        ret = getOutputLines(
+          await portWritelnWaitfor(
+            "sudo tar -xJvf node-$VERSION-$DISTRO.tar.xz -C /usr/local/lib/nodejs",
+            cmdPrompt,
+            200000
+          )
+        );
 
-		ret = getOutputLines(await portWritelnWaitfor('echo -n -e "# Nodejs\nVERSION=' + nodeVersion + '\nDISTRO=linux-armv6l\n\nexport PATH=/usr/local/lib/nodejs/node-$VERSION-$DISTRO/bin:$PATH\n" | tee -a ~/.profile', cmdPrompt));
+        ret = getOutputLines(
+          await portWritelnWaitfor(
+            'echo -n -e "# Nodejs\nVERSION=' +
+              nodeVersion +
+              '\nDISTRO=linux-armv6l\n\nexport PATH=/usr/local/lib/nodejs/node-$VERSION-$DISTRO/bin:$PATH\n" | tee -a ~/.profile',
+            cmdPrompt
+          )
+        );
 
-		ret = getOutputLines(await portWritelnWaitfor('. ~/.profile', cmdPrompt));
+        ret = getOutputLines(
+          await portWritelnWaitfor(". ~/.profile", cmdPrompt)
+        );
 
-		messageDiv.innerHTML="NODE.JS RUNTIME INSTALLATION COMPLETED!";
-		ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
-		ret = getOutputLines(await portWritelnWaitfor('node -v', cmdPrompt, 10000));
-		nodeV = "Version:<br> node.js:"+ret[1];
-		ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
-		nodeV += "<br>" + " npm:" + ret[1];
+        messageDiv.innerHTML = "NODE.JS RUNTIME INSTALLATION COMPLETED!";
+        ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+        ret = getOutputLines(
+          await portWritelnWaitfor("node -v", cmdPrompt, 10000)
+        );
+        nodeV = "Version:<br> node.js:" + ret[1];
+        ret = getOutputLines(
+          await portWritelnWaitfor("npm -v", cmdPrompt, 10000)
+        );
+        nodeV += "<br>" + " npm:" + ret[1];
+      } else {
+        nodeV = "Version:<br> node.js:" + ret[1];
+        ret = getOutputLines(
+          await portWritelnWaitfor("npm -v", cmdPrompt, 10000)
+        );
+        nodeV += "<br>" + " npm:" + ret[1];
+      }
 
-	} else {
-		nodeV = "Version:<br> node.js:"+ret[1];
-		ret = getOutputLines(await portWritelnWaitfor('npm -v', cmdPrompt, 10000));
-		nodeV += "<br>" + " npm:" + ret[1];
-	}
+      // add forever 2021/11/02
+      ret = getOutputLines(
+        await portWritelnWaitfor("which forever", cmdPrompt)
+      );
+      if (ret[1].indexOf("forever") == -1) {
+        messageDiv.innerHTML =
+          nodeV + "<br><br>Installing forever command for Node.js";
+        ret = getOutputLines(
+          await portWritelnWaitfor(
+            "sudo npm install -g forever",
+            cmdPrompt,
+            300000
+          )
+        );
+      }
 
-	// add forever 2021/11/02
-	ret = getOutputLines(await portWritelnWaitfor("which forever", cmdPrompt));
-	if ( ret[1].indexOf("forever")==-1 ){
-		messageDiv.innerHTML=nodeV + "<br><br>Installing forever command for Node.js";
-		ret = getOutputLines(await portWritelnWaitfor("sudo npm install -g forever", cmdPrompt, 300000));
-	}
+      messageDiv.innerHTML =
+        nodeV +
+        "<br><br>NEXT building CHIRIMEN environment and its libraries on " +
+        appDir;
 
-	messageDiv.innerHTML=nodeV + "<br><br>NEXT building CHIRIMEN environment and its libraries on "+appDir;
+      await buildChirimenDevDir(appDir);
+      ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
+      await showDir();
+      messageDiv.innerHTML =
+        "CONGRATURATIONS. setup completed!<br>Your prototyping directory is " +
+        appDir;
+    }
 
+    async function buildChirimenDevDir(targetDir) {
+      if (!targetDir) {
+        targetDir = appDir;
+      }
+      var ret;
+      ret = getOutputLines(
+        await portWritelnWaitfor("mkdir " + targetDir, cmdPrompt)
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor("cd " + targetDir, cmdPrompt)
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(
+          "wget https://tutorial.chirimen.org/pizero/package.json",
+          cmdPrompt,
+          10000
+        )
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(
+          "wget https://chirimen.org/remote-connection/js/beta/RelayServer.js",
+          cmdPrompt,
+          10000
+        )
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor("npm install", cmdPrompt, 300000)
+      );
+    }
 
-	await buildChirimenDevDir(appDir);
-	ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
-	await showDir();
-	messageDiv.innerHTML="CONGRATURATIONS. setup completed!<br>Your prototyping directory is "+ appDir;
+    async function i2cdetect() {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" i2cdetect -y -r 1", cmdPrompt)
+      );
+      var ht = "<pre><code>     ";
+      for (var i = 1; i < ret.length - 1; i++) {
+        ht += ret[i] + "\n";
+      }
+      ht += "</pre></code>";
+      messageDiv.innerHTML = ht;
+    }
 
-}
+    function examplePanel() {
+      var ifr = document.createElement("iframe");
+      ifr.style.width = "100%";
+      ifr.style.height = "100%";
+      //	ifr.src="../tmp/e_index.html";
+      ifr.src = "https://tutorial.chirimen.org/pizero/esm-examples/";
+      messageDiv.innerHTML = "";
+      messageDiv.appendChild(ifr);
+    }
 
-async function buildChirimenDevDir(targetDir){
-	if ( !targetDir){
-		targetDir = appDir;
-	}
-	var ret;
-	ret = getOutputLines(await portWritelnWaitfor("mkdir "+targetDir, cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("cd "+ targetDir, cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor("wget https://tutorial.chirimen.org/pizero/package.json", cmdPrompt, 10000));
-	ret = getOutputLines(await portWritelnWaitfor("wget https://chirimen.org/remote-connection/js/beta/RelayServer.js", cmdPrompt, 10000));
-	ret = getOutputLines(await portWritelnWaitfor("npm install", cmdPrompt, 300000));
-}
+    async function receiveMessage(event) {
+      console.log("get message:", event);
+      if (event.data.req && event.data.req == "getSrc") {
+        var ret = getOutputLines(
+          await portWritelnWaitfor("cd " + appDir, cmdPrompt)
+        );
+        var fileName = "main-" + event.data.exampleId + ".js";
+        ret = getOutputLines(
+          await portWritelnWaitfor(
+            "wget " + event.data.url + " -O " + fileName,
+            cmdPrompt,
+            10000
+          )
+        );
+        await showDir();
+      }
+    }
 
-async function i2cdetect(){
-	var ret = getOutputLines(await portWritelnWaitfor(" i2cdetect -y -r 1",cmdPrompt));
-	var ht = "<pre><code>     ";
-	for ( var i = 1 ; i < ret.length - 1 ; i++ ){
-		ht += ret[i]+"\n";
-	}
-	ht+="</pre></code>";
-	messageDiv.innerHTML=ht;
-}
+    async function getJsApps() {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" cd " + absAppDir, cmdPrompt)
+      );
+      await window.opener.showDir();
+      var files = (await window.opener.lsal()).files;
+      var jsApps = [];
+      for (var file of files) {
+        if (file.name.endsWith(".js")) {
+          jsApps.push(file.name);
+        }
+      }
+      return jsApps;
+    }
 
-function examplePanel(){
-	var ifr = document.createElement("iframe");
-	ifr.style.width="100%";
-	ifr.style.height="100%";
-//	ifr.src="../tmp/e_index.html";
-	ifr.src="https://tutorial.chirimen.org/pizero/esm-examples/";
-	messageDiv.innerHTML="";
-	messageDiv.appendChild(ifr);
-}
+    async function stopAllForeverApp() {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" forever stopall", cmdPrompt, 20000)
+      );
+    }
 
-async function receiveMessage(event){
-	console.log("get message:",event);
-	if ( event.data.req && event.data.req=="getSrc"){
-		var ret = getOutputLines(await portWritelnWaitfor("cd "+ appDir, cmdPrompt));
-		var fileName = "main-" +  event.data.exampleId + ".js";
-		ret = getOutputLines(await portWritelnWaitfor('wget '+event.data.url+ " -O "+ fileName, cmdPrompt, 10000));
-		await showDir();
-	}
-}
+    async function setForeverApp(appName) {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(
+          " forever start -w " + appName,
+          cmdPrompt,
+          20000
+        )
+      );
+    }
 
-async function getJsApps(){
-	var ret = getOutputLines(await portWritelnWaitfor(" cd "+ absAppDir, cmdPrompt));
-	await window.opener.showDir();
-	var files = (await window.opener.lsal()).files;
-	var jsApps=[];
-	for ( var file of files){
-		if ( file.name.endsWith(".js")){
-			jsApps.push(file.name);
-		}
+    async function changeForeverApp(event) {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" cd " + absAppDir, cmdPrompt)
+      );
+      await window.opener.showDir();
+      var apName = event.target.value;
+      disableForeverAppTable(true);
+      console.log("changeForeverApp:", apName);
+      if (apName == "StopAllApps") {
+        subMsgDiv.innerText = "Start to stop the resident apps.";
+        await stopAllForeverApp(apName);
+        await delForeverRebootCron(apName);
+      } else {
+        subMsgDiv.innerText = "Start changing resident apps. Ph. 1/2";
+        await stopAllForeverApp();
+        subMsgDiv.innerText = "Start changing resident apps. Ph. 2/2";
+        await setForeverApp(apName);
+        await setForeverRebootCron(apName);
+      }
+      await sleep(2000);
 
-	}
-	return ( jsApps);
-}
+      await foreverPanel();
+    }
 
-async function stopAllForeverApp(){
-	var ret = getOutputLines(await portWritelnWaitfor(" forever stopall", cmdPrompt, 20000));
-}
+    async function setForeverRebootCron(apName) {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(
+          '  echo -e "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n@reboot /usr/local/bin/forever start ' +
+            absAppDir +
+            apName +
+            ' >> /tmp/chirimenCronSetting.log 2>&1" > chirimenCronSetting.txt',
+          cmdPrompt
+        )
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(
+          " crontab ./chirimenCronSetting.txt",
+          cmdPrompt
+        )
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(" rm ./chirimenCronSetting.txt", cmdPrompt)
+      );
+    }
 
-async function setForeverApp(appName){
-	var ret = getOutputLines(await portWritelnWaitfor(" forever start -w " + appName, cmdPrompt, 20000));
-}
+    async function delForeverRebootCron() {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" touch ./chirimenCronSetting.txt", cmdPrompt)
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(
+          " crontab ./chirimenCronSetting.txt",
+          cmdPrompt
+        )
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(" rm ./chirimenCronSetting.txt", cmdPrompt)
+      );
+    }
 
-async function changeForeverApp(event){
-	var ret = getOutputLines(await portWritelnWaitfor(" cd "+ absAppDir, cmdPrompt));
-	await window.opener.showDir();
-	var apName = event.target.value;
-	disableForeverAppTable(true);
-	console.log("changeForeverApp:",apName);
-	if ( apName == "StopAllApps"){
-		subMsgDiv.innerText="Start to stop the resident apps.";
-		await stopAllForeverApp(apName);
-		await delForeverRebootCron(apName);
-	} else {
-		subMsgDiv.innerText="Start changing resident apps. Ph. 1/2";
-		await stopAllForeverApp();
-		subMsgDiv.innerText="Start changing resident apps. Ph. 2/2";
-		await setForeverApp(apName);
-		await setForeverRebootCron(apName);
-	}
-	await sleep(2000);
-	
-	await foreverPanel();
-	
-}
+    function disableForeverAppTable(disabled) {
+      var trs = document.getElementById("foreverAppTable").children;
+      for (var tr of trs) {
+        if (tr.children[2].firstElementChild) {
+          tr.children[2].firstElementChild.disabled = disabled;
+        }
+      }
+    }
 
-async function setForeverRebootCron(apName){
-	var ret = getOutputLines(await portWritelnWaitfor('  echo -e "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n@reboot /usr/local/bin/forever start ' + absAppDir + apName + ' >> /tmp/chirimenCronSetting.log 2>&1" > chirimenCronSetting.txt', cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor(' crontab ./chirimenCronSetting.txt', cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor(' rm ./chirimenCronSetting.txt', cmdPrompt));
-}
+    async function foreverPanel() {
+      var apps = await getJsApps();
+      messageDiv.innerHTML = "";
+      var subMsgDiv = document.createElement("div");
+      subMsgDiv.id = "subMsgDiv";
+      messageDiv.appendChild(subMsgDiv);
+      console.log(apps);
+      var tbl = document.createElement("table");
+      tbl.setAttribute("border", "1");
+      tbl.id = "foreverAppTable";
+      var trs = {};
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<th>Now Running</th><th>App Name</th><th>Select</th>";
+      tbl.appendChild(tr);
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td>-</td><td>STOP ALL APPS</td><td><input type="radio" name="runApp" value="StopAllApps" disabled onchange="changeForeverApp(event)"></td>';
+      trs["StopAllApps"] = tr;
+      tbl.appendChild(tr);
+      var td3 = document.createElement("td");
+      for (var app of apps) {
+        tr = document.createElement("tr");
+        var td1 = document.createElement("td");
+        var td2 = document.createElement("td");
+        td2.innerText = app;
+        var td3 = document.createElement("td");
+        td3.innerHTML =
+          '<input type="radio" name="runApp" value="' +
+          app +
+          '" disabled onchange="changeForeverApp(event)">';
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tbl.appendChild(tr);
+        trs[app] = tr;
+      }
+      subMsgDiv.innerText = "Checking running apps";
+      messageDiv.appendChild(tbl);
+      showForeverApp(trs);
+    }
 
-async function delForeverRebootCron(){
-	var ret = getOutputLines(await portWritelnWaitfor(' touch ./chirimenCronSetting.txt', cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor(' crontab ./chirimenCronSetting.txt', cmdPrompt));
-	ret = getOutputLines(await portWritelnWaitfor(' rm ./chirimenCronSetting.txt', cmdPrompt));
-}
-
-
-function disableForeverAppTable(disabled){
-	var trs = document.getElementById("foreverAppTable").children;
-	for ( var tr of trs ){
-		if ( tr.children[2].firstElementChild){
-			tr.children[2].firstElementChild.disabled=disabled;
-		}
-	}
-}
-
-async function foreverPanel(){
-	var apps = await getJsApps();
-	messageDiv.innerHTML="";
-	var subMsgDiv = document.createElement("div");
-	subMsgDiv.id="subMsgDiv";
-	messageDiv.appendChild(subMsgDiv);
-	console.log(apps);
-	var tbl = document.createElement("table");
-	tbl.setAttribute("border","1");
-	tbl.id="foreverAppTable";
-	var trs={};
-	var tr = document.createElement("tr");
-	tr.innerHTML="<th>Now Running</th><th>App Name</th><th>Select</th>";
-	tbl.appendChild(tr);
-	var tr = document.createElement("tr");
-	tr.innerHTML='<td>-</td><td>STOP ALL APPS</td><td><input type="radio" name="runApp" value="StopAllApps" disabled onchange="changeForeverApp(event)"></td>';
-	trs["StopAllApps"]=tr;
-	tbl.appendChild(tr);
-	var td3 = document.createElement("td");
-	for ( var app of apps){
-		tr = document.createElement("tr");
-		var td1 = document.createElement("td");
-		var td2 = document.createElement("td");
-		td2.innerText=app;
-		var td3 = document.createElement("td");
-		td3.innerHTML='<input type="radio" name="runApp" value="'+app+'" disabled onchange="changeForeverApp(event)">';
-		tr.appendChild(td1);
-		tr.appendChild(td2);
-		tr.appendChild(td3);
-		tbl.appendChild(tr);
-		trs[app]=tr;
-	}
-	subMsgDiv.innerText="Checking running apps";
-	messageDiv.appendChild(tbl);
-	showForeverApp(trs);
-}
-
-
-async function showForeverApp(trs){
-	console.log("showForeverApp:",trs);
-	var ret = getOutputLines(await portWritelnWaitfor(" forever list --plain", cmdPrompt, 20000));
-	subMsgDiv.innerText="-";
-	var isRunning = false;
-	var fpNames=[];
-	for ( var i = 0 ; i < ret.length - 1 ; i++ ){
-		var line = ret[i];
-		console.log(line);
-		if ( line.indexOf("No forever processes running")>=0){
-			break;
-		} else if ( line.indexOf("Forever processes running")>=0){
-			isRunning = true;
-			console.log("isRun")
-		} else if ( isRunning ){
-			var fpi = line.split(/[\s]+/);
-			var fpName = fpi[4].trim();
-			console.log(fpName);
-			if ( fpName.endsWith(".js")){
-				if ( fpName.indexOf(absAppDir)>=0){
-					fpName = fpName.substring(fpName.indexOf(absAppDir) + absAppDir.length);
-				}
-				fpNames.push(fpName);
-			}
-		}
-	}
-	console.log(fpNames);
-	if ( isRunning ){
-		for ( var fpName of fpNames){
-			console.log(fpName,trs[fpName],trs);
-			if ( trs[fpName] ){
-				trs[fpName].children[0].innerText="RUNNING";
-				trs[fpName].children[2].firstElementChild.checked=true;
-			}
-		}
-	} else {
-		trs["StopAllApps"].children[2].firstElementChild.checked=true;
-	}
-	disableForeverAppTable(false);
-}
-</script>
-<body>
-
-<input type="button" onclick="setupChirimen()" value="setup CHIRIMEN" />
-<input type="button" onclick="i2cdetect()" value="i2cdetect" />
-<input type="button" onclick="examplePanel()" value="Get Examples" />
-<input type="button" onclick="foreverPanel()" value="Resident App Conf." />
-<div id="messageDiv" style="width:100%;height:600px"><img height="600" src="wallpaperS.png"></div>
-</body>
+    async function showForeverApp(trs) {
+      console.log("showForeverApp:", trs);
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" forever list --plain", cmdPrompt, 20000)
+      );
+      subMsgDiv.innerText = "-";
+      var isRunning = false;
+      var fpNames = [];
+      for (var i = 0; i < ret.length - 1; i++) {
+        var line = ret[i];
+        console.log(line);
+        if (line.indexOf("No forever processes running") >= 0) {
+          break;
+        } else if (line.indexOf("Forever processes running") >= 0) {
+          isRunning = true;
+          console.log("isRun");
+        } else if (isRunning) {
+          var fpi = line.split(/[\s]+/);
+          var fpName = fpi[4].trim();
+          console.log(fpName);
+          if (fpName.endsWith(".js")) {
+            if (fpName.indexOf(absAppDir) >= 0) {
+              fpName = fpName.substring(
+                fpName.indexOf(absAppDir) + absAppDir.length
+              );
+            }
+            fpNames.push(fpName);
+          }
+        }
+      }
+      console.log(fpNames);
+      if (isRunning) {
+        for (var fpName of fpNames) {
+          console.log(fpName, trs[fpName], trs);
+          if (trs[fpName]) {
+            trs[fpName].children[0].innerText = "RUNNING";
+            trs[fpName].children[2].firstElementChild.checked = true;
+          }
+        }
+      } else {
+        trs["StopAllApps"].children[2].firstElementChild.checked = true;
+      }
+      disableForeverAppTable(false);
+    }
+  </script>
+  <body>
+    <input type="button" onclick="setupChirimen()" value="setup CHIRIMEN" />
+    <input type="button" onclick="i2cdetect()" value="i2cdetect" />
+    <input type="button" onclick="examplePanel()" value="Get Examples" />
+    <input type="button" onclick="foreverPanel()" value="Resident App Conf." />
+    <div id="messageDiv" style="width: 100%; height: 600px">
+      <img height="600" src="wallpaperS.png" />
+    </div>
+  </body>
 </html>

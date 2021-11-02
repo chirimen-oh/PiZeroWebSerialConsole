@@ -1,163 +1,196 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>WiFi Setting</title>
-</head>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WiFi Setting</title>
+  </head>
 
-<script>
+  <script>
+    onload = async function () {
+      portWritelnWaitfor = window.opener.portWritelnWaitfor;
+      getOutputLines = window.opener.getOutputLines;
+      cmdPrompt = window.opener.cmdPrompt;
+      setEditedText = window.opener.setEditedText;
+      str2arrayBuffer = window.opener.str2arrayBuffer;
+      saveFile = window.opener.saveFile;
+      mv = window.opener.mv;
+      cp = window.opener.cp;
+      closeConnection = window.opener.closeConnection;
+      WiFiShow();
+    };
+    const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
 
-onload=async function(){
-	portWritelnWaitfor = window.opener.portWritelnWaitfor;
-	getOutputLines = window.opener.getOutputLines;
-	cmdPrompt = window.opener.cmdPrompt;
-	setEditedText = window.opener.setEditedText;
-	str2arrayBuffer = window.opener.str2arrayBuffer;
-	saveFile = window.opener.saveFile;
-	mv = window.opener.mv;
-	cp = window.opener.cp;
-	closeConnection = window.opener.closeConnection
-	WiFiShow();
-}
-const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+    async function wifiStat() {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" ifconfig", cmdPrompt)
+      );
+      var wdf = false;
+      var ipInfo = "wlan0: ",
+        wlInfo = "";
+      var ipaddr;
+      for (var line of ret) {
+        if (line.indexOf("wlan0:") >= 0) {
+          wdf = true;
+        } else if (line == "") {
+          wdf = false;
+        }
+        if (wdf) {
+          if (line.indexOf("inet ") >= 0) {
+            ipInfo += line + "\n";
+            ipaddr = line;
+            break;
+          }
+        }
+      }
 
-async function wifiStat(){
-	var ret = getOutputLines(await portWritelnWaitfor(" ifconfig",cmdPrompt));
-	var wdf=false;
-	var ipInfo="wlan0: ",wlInfo="";
-	var ipaddr;
-	for ( var line of ret){
-		if ( line.indexOf("wlan0:")>=0){
-			wdf=true;
-		}else if ( line==""){
-			wdf=false;
-		}
-		if ( wdf){
-			if ( line.indexOf("inet ")>=0){
-				ipInfo+=line+"\n";
-				ipaddr=line;
-				break;
-			}
-		}
-	}
+      wdf = false;
+      ret = getOutputLines(await portWritelnWaitfor(" iwconfig", cmdPrompt));
+      for (var line of ret) {
+        if (line.indexOf("wlan0") >= 0) {
+          wdf = true;
+        } else if (line == "") {
+          wdf = false;
+        }
+        if (wdf) {
+          wlInfo += line + "\n";
+        }
+      }
+      console.log("ipInfo:", ipInfo);
+      console.log("wlInfo:", wlInfo);
 
-	wdf=false;
-	ret = getOutputLines(await portWritelnWaitfor(" iwconfig",cmdPrompt));
-	for ( var line of ret){
-		if ( line.indexOf("wlan0")>=0){
-			wdf=true;
-		}else if ( line==""){
-			wdf=false;
-		}
-		if ( wdf){
-			wlInfo+=line+"\n";
-		}
-	}
-	console.log("ipInfo:",ipInfo);
-	console.log("wlInfo:",wlInfo);
+      ret = getOutputLines(
+        await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org", cmdPrompt)
+      );
+      var pingok = false;
+      if (ret[ret.length - 2].indexOf("rtt") >= 0) {
+        pingok = true;
+      }
+      console.log("ping:", ret[ret.length - 2], pingok);
 
-	ret = getOutputLines(await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org",cmdPrompt));
-	var pingok=false;
-	if ( ret[ret.length-2].indexOf("rtt")>=0){
-		pingok=true;
-	}
-	console.log("ping:",ret[ret.length-2], pingok);
+      infoPre.innerText = ipInfo + wlInfo;
+      if (pingok) {
+        infoPre.insertAdjacentHTML(
+          "beforeend",
+          '\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n'
+        );
+      }
+      if (ipaddr) {
+        ipaddr = ipaddr
+          .substring(ipaddr.indexOf("inet ") + 4, ipaddr.indexOf("netmask"))
+          .trim();
+        infoPre.insertAdjacentHTML(
+          "beforeend",
+          '\n<span style="color:blue;font-size:18px">Raspberry Pi\'s IP Address: ' +
+            ipaddr +
+            "</span>"
+        );
+      }
+    }
 
-	infoPre.innerText=ipInfo+wlInfo;
-	if ( pingok ){
-		infoPre.insertAdjacentHTML("beforeend",'\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n');
-	}
-	if ( ipaddr ){
-		ipaddr=ipaddr.substring(ipaddr.indexOf("inet ")+4,ipaddr.indexOf("netmask")).trim();
-		infoPre.insertAdjacentHTML("beforeend",'\n<span style="color:blue;font-size:18px">Raspberry Pi\'s IP Address: '+ipaddr+'</span>');
-	}
-}
+    async function wifiScan() {
+      var ret = getOutputLines(
+        await portWritelnWaitfor(" sudo iwlist wlan0 scan", cmdPrompt)
+      );
+      const wifiInfos = [];
+      var wifiInfo = {};
+      var first = true;
+      for (var i = 1; i < ret.length - 1; i++) {
+        var row = ret[i].split(/:/);
+        //console.log(row,ret[i].indexOf("Cell"));
+        if (ret[i].indexOf("Cell") >= 0 && ret[i].indexOf("Address") > 0) {
+          row = ret[i].split(/\s+/);
+          if (!first) {
+            wifiInfos.push(wifiInfo);
+          } else {
+            first = false;
+          }
+          //console.log("NEW",row);
+          wifiInfo = { address: row[4] };
+        } else if (ret[i].indexOf("ESSID:") >= 0) {
+          wifiInfo.essid = row[1].trim().replaceAll('"', "");
+        } else if (ret[i].indexOf("IEEE 802.11") >= 0) {
+          wifiInfo.spec = row[1].trim();
+        } else if (ret[i].indexOf("Quality") >= 0) {
+          wifiInfo.quality = ret[i].trim();
+        } else if (ret[i].indexOf("Group Cipher") >= 0) {
+          wifiInfo.spec += "," + row[1].trim();
+        } else if (ret[i].indexOf("Pairwise Ciphers") >= 0) {
+          wifiInfo.spec += "," + row[1].trim();
+        } else if (ret[i].indexOf("Authentication Suites") >= 0) {
+          wifiInfo.spec += row[1].trim();
+        } else if (ret[i].indexOf("Frequency:") >= 0) {
+          wifiInfo.frequency = row[1].trim();
+        } else if (ret[i].indexOf("Channel:") >= 0) {
+          wifiInfo.channel = row[1].trim();
+        }
+      }
+      wifiInfos.push(wifiInfo);
+      return { rawData: ret, wifiInfos: wifiInfos };
+    }
 
-async function wifiScan(){
-	var ret = getOutputLines(await portWritelnWaitfor(" sudo iwlist wlan0 scan",cmdPrompt));
-	const wifiInfos=[];
-	var wifiInfo={};
-	var first=true;
-	for ( var i = 1 ; i < ret.length - 1 ; i++){
-		var row=ret[i].split(/:/);
-		//console.log(row,ret[i].indexOf("Cell"));
-		if ( ret[i].indexOf("Cell")>=0 && ret[i].indexOf("Address")>0 ){
-			row=ret[i].split(/\s+/);
-			if ( !first){wifiInfos.push(wifiInfo);}else{first=false}
-			//console.log("NEW",row);
-			wifiInfo={address:row[4]};
-		}else if ( ret[i].indexOf("ESSID:")>=0){
-			wifiInfo.essid=row[1].trim().replaceAll('"','');
-		}else if ( ret[i].indexOf("IEEE 802.11")>=0){
-			wifiInfo.spec=row[1].trim();
-		}else if ( ret[i].indexOf("Quality")>=0){
-			wifiInfo.quality=ret[i].trim();
-		}else if ( ret[i].indexOf("Group Cipher")>=0){
-			wifiInfo.spec+=","+row[1].trim();
-		}else if ( ret[i].indexOf("Pairwise Ciphers")>=0){
-			wifiInfo.spec+=","+row[1].trim();
-		}else if ( ret[i].indexOf("Authentication Suites")>=0){
-			wifiInfo.spec+=row[1].trim();
-		}else if ( ret[i].indexOf("Frequency:")>=0){
-			wifiInfo.frequency=row[1].trim();
-		}else if ( ret[i].indexOf("Channel:")>=0){
-			wifiInfo.channel=row[1].trim();
-		}
-	}
-	wifiInfos.push(wifiInfo);
-	return ( {rawData:ret,wifiInfos:wifiInfos} );
-}
+    async function WiFiShow() {
+      var wi = await wifiScan();
+      var str = "WiFi Scan Result:\n";
+      for (var i = 0; i < wi.wifiInfos.length; i++) {
+        str += "SSID : " + wi.wifiInfos[i].essid + "\n";
+        for (var key in wi.wifiInfos[i]) {
+          if (key != "essid") {
+            str += "  " + key + " : " + wi.wifiInfos[i][key] + "\n";
+          }
+        }
+        str += "\n";
+      }
+      infoPre.innerText = str;
+    }
 
+    async function setWiFi() {
+      var ret = await getOutputLines(
+        await portWritelnWaitfor(" cd", cmdPrompt)
+      );
+      // enable ssh
+      var ret = await getOutputLines(
+        await portWritelnWaitfor(" sudo touch /boot/ssh", cmdPrompt)
+      );
+      // set WiFi Info
+      var WiFiSet =
+        'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\ncountry=JP\nnetwork={\n   ssid="{SSID}"\n   psk="{PASS}"\n}';
+      var ssid = ssidInput.value.trim();
+      var pass = passInput.value.trim();
+      WiFiSet = WiFiSet.replace("{SSID}", ssid);
+      WiFiSet = WiFiSet.replace("{PASS}", pass);
+      console.log(WiFiSet);
+      infoPre.innerText = WiFiSet;
 
-async function WiFiShow(){
-	var wi = await wifiScan();
-	var str ="WiFi Scan Result:\n";
-	for ( var i = 0 ; i < wi.wifiInfos.length ; i++ ){
-		str += "SSID : "+ wi.wifiInfos[i].essid+"\n";
-		for ( var key in wi.wifiInfos[i] ){
-			if ( key != "essid"){
-				str += "  "+key+" : " + wi.wifiInfos[i][key]+"\n";
-			}
-		}
-		str += "\n";
-	}
-	infoPre.innerText=str;
-}
+      await saveFile(str2arrayBuffer(WiFiSet), "wpa_supplicant.conf");
+      await cp("wpa_supplicant.conf", "/boot/wpa_supplicant.conf", true);
+    }
 
-async function setWiFi(){
-	var ret = await getOutputLines(await portWritelnWaitfor(" cd",cmdPrompt));
-	// enable ssh
-	var ret = await getOutputLines(await portWritelnWaitfor(" sudo touch /boot/ssh",cmdPrompt));
-	// set WiFi Info
-	var WiFiSet='ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\ncountry=JP\nnetwork={\n   ssid="{SSID}"\n   psk="{PASS}"\n}';
-	var ssid = ssidInput.value.trim();
-	var pass = passInput.value.trim();
-	WiFiSet = WiFiSet.replace("{SSID}",ssid);
-	WiFiSet = WiFiSet.replace("{PASS}",pass);
-	console.log(WiFiSet);
-	infoPre.innerText=WiFiSet;
+    async function reboot() {
+      var ret = await getOutputLines(
+        await portWritelnWaitfor(" sudo reboot", cmdPrompt)
+      );
+      closeConnection();
+    }
+  </script>
 
-	await saveFile(str2arrayBuffer(WiFiSet),"wpa_supplicant.conf");
-	await cp("wpa_supplicant.conf", "/boot/wpa_supplicant.conf", true);
-}
+  <body>
+    <button onclick="WiFiShow()">wifi Scan</button>
+    <button onclick="wifiStat()">wifi Info</button>
 
-async function reboot(){
-	var ret = await getOutputLines(await portWritelnWaitfor(" sudo reboot",cmdPrompt));
-	closeConnection();
-}
-
-</script>
-
-<body>
-
-<button onclick="WiFiShow()">wifi Scan</button>
-<button onclick="wifiStat()">wifi Info</button>
-
-<div style="height:500px;overflow:auto;">
-<pre id="infoPre"></pre>
-</div>
-<div>SSID:<input id="ssidInput" type="text" />, PASS PHRASE:<input id="passInput" type="text" />
-<input type="button" value="SET WiFi" onclick="setWiFi()"><input type="button" value="Reboot" onclick="reboot()" /></div>
-</body>
+    <div style="height: 500px; overflow: auto">
+      <pre id="infoPre"></pre>
+    </div>
+    <div>
+      SSID:<input id="ssidInput" type="text" />, PASS PHRASE:<input
+        id="passInput"
+        type="text"
+      />
+      <input type="button" value="SET WiFi" onclick="setWiFi()" /><input
+        type="button"
+        value="Reboot"
+        onclick="reboot()"
+      />
+    </div>
+  </body>
 </html>
