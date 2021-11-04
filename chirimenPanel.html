@@ -223,7 +223,7 @@
     async function setForeverApp(appName) {
       var ret = getOutputLines(
         await portWritelnWaitfor(
-          " forever start -w " + appName,
+          ` forever start -w ${escapePath(appName)}`,
           cmdPrompt,
           20000
         )
@@ -383,6 +383,18 @@
         trs["StopAllApps"].children[2].firstElementChild.checked = true;
       }
       disableForeverAppTable(false);
+    }
+
+    /**
+     * パス文字列の Bash のためのエスケープ処理
+     * Bash ANSI-C Quoting を参照
+     * @todo ディレクトリトラバーサル対策してほしい
+     * @param {string} path
+     * @return {string} Bash ANSI-C Quoting による表現
+     */
+    function escapePath(path) {
+      const jsonString = JSON.stringify(String(path));
+      return jsonString.replace(/^"/, `$$'`).replace(/"$/, `'`);
     }
   </script>
   <body>

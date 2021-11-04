@@ -465,28 +465,29 @@ History
     }
 
     async function lsal() {
-      var ret = await portWritelnWaitfor(" ls -al", cmdPrompt);
+      /** 表示結果からファイルに関する付帯情報を得るための正規表現 */
+      const capturingRegex =
+        /^(?<attr>\S+)\s+(?<hlinks>\S+)\s+(?<group>\S+)\s+(?<user>\S+)\s+(?<size>\S+)\s+(?<month>\S+)\s+(?<date>\S+)\s+(?<time>\S+)\s+(?<name>.+)$/;
+      var ret = await portWritelnWaitfor(
+        " ls -al --quoting-style=c",
+        cmdPrompt
+      );
       ret = getOutputLines(ret);
       var ans = [];
       var prompt = ret[ret.length - 1].trim();
       for (var i = 2; i < ret.length - 1; i++) {
-        var fi = ret[i].split(/\s+/);
-        var isDir = false;
-        if (fi[0].substring(0, 1) != "-") {
-          isDir = true;
-        }
-        fileInfo = {
-          attr: fi[0],
+        const match = capturingRegex.exec(ret[i]);
+        const isDir = match?.groups.attr[0] === "d";
+        const fileInfo = {
           dir: isDir,
-          hlinks: fi[1],
-          group: fi[2],
-          user: fi[3],
-          size: fi[4],
-          month: fi[5],
-          date: fi[6],
-          time: fi[7],
-          name: fi[8],
+          ...match?.groups,
         };
+        try {
+          // TODO: C Quoting の解釈を JSON.parse によって代替しているため \v など一部トークンの解釈に失敗しうる
+          fileInfo.name = JSON.parse(fileInfo.name ?? JSON.stringify(""));
+        } catch {
+          fileInfo.name = "";
+        }
         ans.push(fileInfo);
       }
       return { files: ans, prompt: prompt };
@@ -495,7 +496,7 @@ History
     async function rm(fileName) {
       // フルパスの場合はどうするか・・
       var ret = getOutputLines(
-        await portWritelnWaitfor(" rm " + fileName, cmdPrompt)
+        await portWritelnWaitfor(` rm -- ${escapePath(fileName)}`, cmdPrompt)
       );
       console.log(ret);
     }
@@ -508,7 +509,7 @@ History
       }
       var ret = getOutputLines(
         await portWritelnWaitfor(
-          " " + sudoHead + " mv " + fromPath + " " + toPath,
+          ` ${sudoHead} mv -- ${escapePath(fromPath)} ${escapePath(toPath)}`,
           cmdPrompt
         )
       );
@@ -523,7 +524,7 @@ History
       }
       var ret = getOutputLines(
         await portWritelnWaitfor(
-          " " + sudoHead + " cp " + fromPath + " " + toPath,
+          ` ${sudoHead} cp -- ${escapePath(fromPath)} ${escapePath(toPath)}`,
           cmdPrompt
         )
       );
@@ -585,7 +586,7 @@ History
       transferFileObj.transferring = true;
       portWrite(ctrlc); // フォアグランドアプリ動作中のものを止める努力をした方が良さそう2021/11/02
       await sleep(100);
-      await portWriteWaitfor(" base64 -d >" + fileName + "\n", "\n");
+      await portWriteWaitfor(` base64 -d > ${escapePath(fileName)}\n`, "\n");
       for (var i = 0; i <= Math.floor(base64.length / lineLength); i++) {
         if (transferFileObj.halt == true) {
           transferFileObj.halt = false;
@@ -823,7 +824,10 @@ History
     }
 
     async function cd(dir) {
-      var ret = await portWritelnWaitfor(" cd " + dir, cmdPrompt);
+      var ret = await portWritelnWaitfor(
+        ` cd -- ${escapePath(dir)}`,
+        cmdPrompt
+      );
       ret = await showDir();
       //console.log(ret);
       currentDir = getDirFromPrompt(ret);
@@ -882,7 +886,10 @@ History
 
     async function getFileSmall(path) {
       // 短いファイルでないとフロー制御できてなくて破綻する？ obsoluted
-      var ret = await portWritelnWaitfor(" base64 " + path, "\r\n" + cmdPrompt);
+      var ret = await portWritelnWaitfor(
+        ` base64 -- ${escapePath(path)}`,
+        "\r\n" + cmdPrompt
+      );
       ret = getOutputLines(ret);
       var ans = "";
       for (var i = 1; i < ret.length - 1; i++) {
@@ -919,7 +926,7 @@ History
       }
       var ans = "";
       var ret = await portWritelnWaitfor(
-        " base64 " + path + " | sed '$a ENDLINE--More--' | more -50",
+        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | more -50`,
         "more -50"
       );
       //console.log(ret);
@@ -1062,6 +1069,18 @@ History
 
     function showCurrentDir() {
       currentDirSpan.innerText = currentDir;
+    }
+
+    /**
+     * パス文字列の Bash のためのエスケープ処理
+     * Bash ANSI-C Quoting を参照
+     * @todo ディレクトリトラバーサル対策してほしい
+     * @param {string} path
+     * @return {string} Bash ANSI-C Quoting による表現
+     */
+    function escapePath(path) {
+      const jsonString = JSON.stringify(String(path));
+      return jsonString.replace(/^"/, `$$'`).replace(/"$/, `'`);
     }
   </script>
 
