@@ -13,10 +13,10 @@
   overflow-x: hidden;
   width: 180px;
   height: 300px;
-//  margin: 0 auto;
+  /* margin: 0 auto; */
   padding: 0;
-//  box-sizing: border-box;
-//  display: flex;
+  /* box-sizing: border-box;
+  display: flex; */
 }
 .filelist {
   width: 180px;
@@ -63,7 +63,7 @@
 	cursor : pointer;
 }
 .filelist > li li:hover > span {/*layer-2 sel*/
-  color: #611; 
+  color: #611;
   background: #d4f;
 	cursor : pointer;
 }
@@ -77,7 +77,7 @@
 .filelist li ul li {
   overflow: hidden;
   height: 0;
-//  left: 110px;
+  /* left: 110px; */
   list-style: none;
 }
 .filelist li ul li span {/*layer-2*/
@@ -102,7 +102,7 @@
 </style>
 <style type="text/css">
 #fileListTable {
-//	overflow:auto;
+	/* overflow:auto; */
 	width:200px;
 	height:420px;
 	margin:0px;
@@ -155,7 +155,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-However, if you want to use the contents of this repository for CHIRIMEN 
+However, if you want to use the contents of this repository for CHIRIMEN
 community's projects, you can also choose the MIT license.
 So, this is a limited dual license for the CHIRIMEN community.
 
@@ -296,7 +296,7 @@ function portWriteWaitfor(writeData, waitForRegExp, timeOutMsOptional){
 		waitForSerialIn.inputValue="";
 		waitForSerialIn.RegExp=waitForRegExp;
 		waitForSerialIn.CBF=cbf;
-		
+
 		waitForSerialIn.TimeOutCBF = function(){
 			console.log("fail wait for:",waitForSerialIn.inputValue);
 			waitForSerialIn.inputValue="";
@@ -311,7 +311,7 @@ function portWriteWaitfor(writeData, waitForRegExp, timeOutMsOptional){
 		//console.log("portWrite:",writeData,"  cond:",waitForRegExp);
 		portWrite(writeData);
 	});
-	
+
 }
 async function portWritelnWaitfor(writeData, waitForRegExp, timeOutMsOptional){
 	var ret = await portWriteWaitfor(writeData + "\n",waitForRegExp, timeOutMsOptional);
@@ -402,7 +402,7 @@ async function autoLogInPiZero(noRetry){ // ログイン処理
 	var date = new Date();
 	var dateCmd = " sudo date " + pad2(date.getMonth()+1) + pad2(date.getDate())+pad2(date.getHours()) + pad2(date.getMinutes()) + date.getFullYear() + "." + pad2(date.getSeconds());
 	await portWritelnWaitfor(dateCmd, cmdPrompt);
-	
+
 	await pwd();
 	await sleep(100);
 	await cdHome();
@@ -525,14 +525,14 @@ async function saveFile(buffer , fileName){
 	//var base64String = window.btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
 	//console.log(base64String);
 	console.log(fileName);
-	
+
 	//var base64 =  base64String = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 	//console.log(base64);
-	
+
 	if ( progress ){
-		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル'></input>");
+		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />");
 	}
-	
+
 	transferFileObj.transferring = true;
 	portWrite(ctrlc); // フォアグランドアプリ動作中のものを止める努力をした方が良さそう2021/11/02
 	await sleep(100);
@@ -574,7 +574,7 @@ async function uploadFile(event){
 	const fr = new FileReader();
 	fr.onload = async function(e){
 		var buffer = e.target.result;
-		
+
 		await saveFile(buffer , file.name)
 		fileInputElement.value="";
 		await sleep(200);
@@ -668,7 +668,7 @@ async function showDir(){
 		fnSpan.innerHTML="<label title='" + fname +" : "+fsizeS+ "bytes'>" + fname + "</label>";
 		li.appendChild(fnSpan);
 		ul.appendChild(li);
-		
+
 		var actUl = document.createElement("ul");
 		if ( files[i].dir ){
 			var cdLi =document.createElement("li");
@@ -684,22 +684,22 @@ async function showDir(){
 			viewSpan.addEventListener("click",function(fname,fsize,editFlg){return function(){showFile(fname,fsize,editFlg)}}(fname,fsize,false));
 			viewLi.appendChild(viewSpan);
 			actUl.appendChild(viewLi);
-			
-			
+
+
 			var editLi =document.createElement("li");
 			var editSpan = document.createElement("span");
 			editSpan.innerText=FileManagerMessage[lang].edit;
 			editSpan.addEventListener("click",function(fname,fsize,editFlg){return function(){showFile(fname,fsize,editFlg)}}(fname,fsize,true));
 			editLi.appendChild(editSpan);
 			actUl.appendChild(editLi);
-			
-			
+
+
 			var delLi =document.createElement("li");
 			var delSpan = document.createElement("span");
 			delSpan.innerText=FileManagerMessage[lang].delete;
 			delLi.appendChild(delSpan);
 			actUl.appendChild(delLi);
-			
+
 			var delCfUl = document.createElement("ul");
 			var delCfNgLi =document.createElement("li");
 			var delCfNgSpan = document.createElement("span");
@@ -712,7 +712,7 @@ async function showDir(){
 			delCfOkSpan.addEventListener("click",function(fname){return function(){remveAndList(fname)}}(fname));
 			delCfOkLi.appendChild(delCfOkSpan);
 			delCfUl.appendChild(delCfOkLi);
-			
+
 			delLi.appendChild(delCfUl);
 		}
 		li.appendChild(actUl);
@@ -758,7 +758,7 @@ function isTextFile(path){
 	var ans = true;
 	var f_ext = fname.substring(fname.lastIndexOf("."));
 	var f_name = fname.substring(0,fname.lastIndexOf("."));
-	
+
 	if (f_name == ""){
 		ans = true;
 	}else if ( textFileExtensions.indexOf(f_ext)==-1){
@@ -799,7 +799,7 @@ async function getFile(path ,size){
 		totalLines = Math.floor((4/3 * size) / 76);
 	}
 	if ( progress ){
-		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル'></input>");
+		progress.insertAdjacentHTML("afterbegin","<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />");
 	}
 	var ans="";
 	var ret = await portWritelnWaitfor(" base64 "+path+" | sed '$a ENDLINE--More--' | more -50","more -50");
@@ -944,16 +944,16 @@ function showCurrentDir(){
 
 	<table border="1">
 	<tr><td colspan="2">
-	<button id="connectBtn" onclick="autoLogInPiZero()">Connect and Login PiZero</button> 
+	<button id="connectBtn" onclick="autoLogInPiZero()">Connect and Login PiZero</button>
 	<span id="cmdBtns" style="display:none">
-		<button id="closeBtn" onclick="closeConnection()">Close Connection</button> 
-		<button onclick="cdHome()">HOME</button> 
-		<button onclick="showDir()">ls -al</button> 
-		<button onclick="WiFiPanel()">wifi panel</button> 
-		<button onclick="CHIRIMENPanel()">CHIRIMEN panel</button> 
+		<button id="closeBtn" onclick="closeConnection()">Close Connection</button>
+		<button onclick="cdHome()">HOME</button>
+		<button onclick="showDir()">ls -al</button>
+		<button onclick="WiFiPanel()">wifi panel</button>
+		<button onclick="CHIRIMENPanel()">CHIRIMEN panel</button>
 		upload:<input id="fileUpl" type="file" id="uploadFile" onchange="uploadFile(event)" /><span id="progress"></span>
 		<!--<label for="fileUpl" style="display: inline-block;position: relative;font-size: 14px;padding: 3px 20px;border-radius: 3px;transition: all 0.5s;background-color: #1877F2;color: #fff;">ファイルを添付</label>-->
-		<button onclick="createNewTxt()">createNewText</button> <span id="fileNameInputUI" style="display:none"><input type="text" id="fileNameInput" ></input><button onclick="createNewTxt(true)">create</button><button onclick="createNewTxt(false)">cancel</button></span><span id="currentDirSpan" style="font-size:11px"></span>
+		<button onclick="createNewTxt()">createNewText</button> <span id="fileNameInputUI" style="display:none"><input type="text" id="fileNameInput" /><button onclick="createNewTxt(true)">create</button><button onclick="createNewTxt(false)">cancel</button></span><span id="currentDirSpan" style="font-size:11px"></span>
 	</span>
 
 	</td></tr>

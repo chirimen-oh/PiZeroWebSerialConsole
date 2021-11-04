@@ -41,7 +41,7 @@ async function wifiStat(){
 			}
 		}
 	}
-	
+
 	wdf=false;
 	ret = getOutputLines(await portWritelnWaitfor(" iwconfig",cmdPrompt));
 	for ( var line of ret){
@@ -56,14 +56,14 @@ async function wifiStat(){
 	}
 	console.log("ipInfo:",ipInfo);
 	console.log("wlInfo:",wlInfo);
-	
+
 	ret = getOutputLines(await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org",cmdPrompt));
 	var pingok=false;
 	if ( ret[ret.length-2].indexOf("rtt")>=0){
 		pingok=true;
 	}
 	console.log("ping:",ret[ret.length-2], pingok);
-	
+
 	infoPre.innerText=ipInfo+wlInfo;
 	if ( pingok ){
 		infoPre.insertAdjacentHTML("beforeend",'\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n');
@@ -137,7 +137,7 @@ async function setWiFi(){
 	WiFiSet = WiFiSet.replace("{PASS}",pass);
 	console.log(WiFiSet);
 	infoPre.innerText=WiFiSet;
-	
+
 	await saveFile(str2arrayBuffer(WiFiSet),"wpa_supplicant.conf");
 	await cp("wpa_supplicant.conf", "/boot/wpa_supplicant.conf", true);
 }
@@ -157,7 +157,7 @@ async function reboot(){
 <div style="height:500px;overflow:auto;">
 <pre id="infoPre"></pre>
 </div>
-<div>SSID:<input id="ssidInput" type="text"></input>, PASS PHRASE:<input id="passInput" type="text"></input>
-<input type="button" value="SET WiFi" onclick="setWiFi()"></input><input type="button" value="Reboot" onclick="reboot()"></input></div>
+<div>SSID:<input id="ssidInput" type="text" />, PASS PHRASE:<input id="passInput" type="text" />
+<input type="button" value="SET WiFi" onclick="setWiFi()"><input type="button" value="Reboot" onclick="reboot()" /></div>
 </body>
 </html>
