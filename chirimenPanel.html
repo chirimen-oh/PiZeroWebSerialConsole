@@ -6,6 +6,8 @@
 </head>
 <script>
 var appDir = "~/myApp"; // 絶対パス
+var absAppDir ="/home/pi/myApp/";
+
 onload=async function(){
 	window.addEventListener("message", receiveMessage, false);
 	portWritelnWaitfor = window.opener.portWritelnWaitfor;
@@ -117,7 +119,8 @@ async function receiveMessage(event){
 }
 
 async function getJsApps(){
-	var ret = getOutputLines(await portWritelnWaitfor(" cd ~/myApp", cmdPrompt));
+	var ret = getOutputLines(await portWritelnWaitfor(" cd "+ absAppDir, cmdPrompt));
+	await window.opener.showDir();
 	var files = (await window.opener.lsal()).files;
 	var jsApps=[];
 	for ( var file of files){
@@ -138,21 +141,40 @@ async function setForeverApp(appName){
 }
 
 async function changeForeverApp(event){
+	var ret = getOutputLines(await portWritelnWaitfor(" cd "+ absAppDir, cmdPrompt));
+	await window.opener.showDir();
 	var apName = event.target.value;
 	disableForeverAppTable(true);
 	console.log("changeForeverApp:",apName);
 	if ( apName == "StopAllApps"){
 		subMsgDiv.innerText="Start to stop the resident apps.";
 		await stopAllForeverApp(apName);
+		await delForeverRebootCron(apName);
 	} else {
 		subMsgDiv.innerText="Start changing resident apps. Ph. 1/2";
 		await stopAllForeverApp();
 		subMsgDiv.innerText="Start changing resident apps. Ph. 2/2";
 		await setForeverApp(apName);
+		await setForeverRebootCron(apName);
 	}
 	await sleep(2000);
+	
 	await foreverPanel();
+	
 }
+
+async function setForeverRebootCron(apName){
+	var ret = getOutputLines(await portWritelnWaitfor('  echo -e "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n@reboot /usr/local/bin/forever start ' + absAppDir + apName + ' >> /tmp/chirimenCronSetting.log 2>&1" > chirimenCronSetting.txt', cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor(' crontab ./chirimenCronSetting.txt', cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor(' rm ./chirimenCronSetting.txt', cmdPrompt));
+}
+
+async function delForeverRebootCron(){
+	var ret = getOutputLines(await portWritelnWaitfor(' touch ./chirimenCronSetting.txt', cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor(' crontab ./chirimenCronSetting.txt', cmdPrompt));
+	ret = getOutputLines(await portWritelnWaitfor(' rm ./chirimenCronSetting.txt', cmdPrompt));
+}
+
 
 function disableForeverAppTable(disabled){
 	var trs = document.getElementById("foreverAppTable").children;
@@ -200,8 +222,9 @@ async function foreverPanel(){
 	showForeverApp(trs);
 }
 
+
 async function showForeverApp(trs){
-	console.log(trs);
+	console.log("showForeverApp:",trs);
 	var ret = getOutputLines(await portWritelnWaitfor(" forever list --plain", cmdPrompt, 20000));
 	subMsgDiv.innerText="-";
 	var isRunning = false;
@@ -219,6 +242,9 @@ async function showForeverApp(trs){
 			var fpName = fpi[4].trim();
 			console.log(fpName);
 			if ( fpName.endsWith(".js")){
+				if ( fpName.indexOf(absAppDir)>=0){
+					fpName = fpName.substring(fpName.indexOf(absAppDir) + absAppDir.length);
+				}
 				fpNames.push(fpName);
 			}
 		}
@@ -227,7 +253,7 @@ async function showForeverApp(trs){
 	if ( isRunning ){
 		for ( var fpName of fpNames){
 			console.log(fpName,trs[fpName],trs);
-			if ( trs[fpName]){
+			if ( trs[fpName] ){
 				trs[fpName].children[0].innerText="RUNNING";
 				trs[fpName].children[2].firstElementChild.checked=true;
 			}
