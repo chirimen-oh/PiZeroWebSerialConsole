@@ -266,7 +266,7 @@ History
       if (navigator.language == "ja") {
         lang = navigator.language;
       }
-      term = new Terminal.Terminal();
+      term = new Terminal();
       term.open(document.getElementById("terminal"));
       term.onData(function (data) {
         //console.log(data);
