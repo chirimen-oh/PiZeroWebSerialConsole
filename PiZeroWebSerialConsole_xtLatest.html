@@ -266,7 +266,21 @@ History
       if (navigator.language == "ja") {
         lang = navigator.language;
       }
-      term = new Terminal();
+      // term = new Terminal();
+      term = new Terminal({ // https://n-guitar.hatenablog.com/entry/2020/11/14/212751
+        //rows: 30, // terminalの行数      
+        cursorBlink: true, 
+        cursorStyle: 'block', 
+        RendererType: 'canvas', 
+        fontSize: "18",
+        fontFamily: "monospace", // https://willcloud.jp/knowhow/font-family/#font-family-3 sans-serif, serif, system-ui, monospace, cursive, fantasy
+        /**
+        theme: {
+        background: 'darkslategray',
+        foreground: 'orange',
+        }
+        **/
+      });
       term.open(document.getElementById("terminal"));
       term.onData(function (data) {
         //console.log(data);
