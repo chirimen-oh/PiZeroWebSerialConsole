@@ -1030,10 +1030,28 @@ History
           //win.jsSrc = ans;
         } else {
           win = window.open("", "textSourceWindow", "height=500,width=500");
+          tempBinaryBuffer = { name: fileName, buffer: ans };
           win.document.documentElement.innerHTML =
-            "データはバイナリのようです TBD : " + ans.byteLength + " bytes";
+            "データはバイナリのようです 保存しますか？ : Size:" +
+            ans.byteLength +
+            " bytes<br><input type='button' value='save' onClick='window.opener.saveAsBinary()'></input>";
         }
       }
+    }
+    
+    var tempBinaryBuffer;
+    function saveAsBinary(){
+      // http://urusulambda.com/2018/09/15/javascriptでバイナリーデータを作ってファイルを保存す/
+      if ( typeof(tempBinaryBuffer)=="object" ){
+        var blob = new Blob([tempBinaryBuffer.buffer], {type: "octet/stream"});
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = tempBinaryBuffer.name;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+      tempBinaryBuffer=null;
     }
 
     function createNewTxt(stat) {
