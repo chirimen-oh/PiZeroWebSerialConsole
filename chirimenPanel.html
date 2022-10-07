@@ -142,14 +142,14 @@
       );
       ret = getOutputLines(
         await portWritelnWaitfor(
-          "wget -O https://tutorial.chirimen.org/pizero/package.json",
+          "wget -O package.json https://tutorial.chirimen.org/pizero/package.json",
           cmdPrompt,
           10000
         )
       );
       ret = getOutputLines(
         await portWritelnWaitfor(
-          "wget -O https://chirimen.org/remote-connection/js/beta/RelayServer.js",
+          "wget -O RelayServer.js https://chirimen.org/remote-connection/js/beta/RelayServer.js",
           cmdPrompt,
           10000
         )
