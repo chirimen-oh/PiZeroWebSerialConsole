@@ -311,7 +311,7 @@ History
         waitForSerialIn.CBF = cbf;
 
         waitForSerialIn.TimeOutCBF = function () {
-          console.log("fail wait for:", waitForSerialIn.inputValue);
+          console.warn("fail wait for:", waitForSerialIn.inputValue);
           waitForSerialIn.inputValue = "";
           waitForSerialIn.CBF = null;
           waitForSerialIn.Str = null;
@@ -407,7 +407,7 @@ History
         //return;
       } else if (ret.indexOf("login:") >= 0) {
         var ret = await portWriteWaitfor(loginId + "\n", "Password:");
-        ret = await portWriteWaitfor(loginPassword + "\n", "\\$", 20000);
+        ret = await portWriteWaitfor(loginPassword + "\n", "\\$", 40000);
       } else if (!noRetry) {
         await autoLogInPiZero(true);
       } else {
