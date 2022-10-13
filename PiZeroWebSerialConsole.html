@@ -407,7 +407,7 @@ History
         //return;
       } else if (ret.indexOf("login:") >= 0) {
         var ret = await portWriteWaitfor(loginId + "\n", "Password:");
-        ret = await portWriteWaitfor(loginPassword + "\n", "\\$", 10000);
+        ret = await portWriteWaitfor(loginPassword + "\n", "\\$", 20000);
       } else if (!noRetry) {
         await autoLogInPiZero(true);
       } else {
