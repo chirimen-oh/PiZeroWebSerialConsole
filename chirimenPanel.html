@@ -30,7 +30,7 @@
       ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
       var nodeV;
       ret = getOutputLines(
-        await portWritelnWaitfor("node -v", cmdPrompt, 10000)
+        await portWritelnWaitfor("node -v", cmdPrompt, 20000)
       );
       if (ret[1].indexOf("-bash:") == 0) {
         ret = getOutputLines(
@@ -85,17 +85,17 @@
         messageDiv.innerHTML = "NODE.JS RUNTIME INSTALLATION COMPLETED!";
         ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
         ret = getOutputLines(
-          await portWritelnWaitfor("node -v", cmdPrompt, 10000)
+          await portWritelnWaitfor("node -v", cmdPrompt, 20000)
         );
         nodeV = "Version:<br> node.js:" + ret[1];
         ret = getOutputLines(
-          await portWritelnWaitfor("npm -v", cmdPrompt, 10000)
+          await portWritelnWaitfor("npm -v", cmdPrompt, 20000)
         );
         nodeV += "<br>" + " npm:" + ret[1];
       } else {
         nodeV = "Version:<br> node.js:" + ret[1];
         ret = getOutputLines(
-          await portWritelnWaitfor("npm -v", cmdPrompt, 10000)
+          await portWritelnWaitfor("npm -v", cmdPrompt, 20000)
         );
         nodeV += "<br>" + " npm:" + ret[1];
       }
@@ -144,18 +144,18 @@
         await portWritelnWaitfor(
           "wget -O package.json https://tutorial.chirimen.org/pizero/package.json",
           cmdPrompt,
-          10000
+          20000
         )
       );
       ret = getOutputLines(
         await portWritelnWaitfor(
           "wget -O RelayServer.js https://chirimen.org/remote-connection/js/beta/RelayServer.js",
           cmdPrompt,
-          10000
+          20000
         )
       );
       ret = getOutputLines(
-        await portWritelnWaitfor("npm install", cmdPrompt, 300000)
+        await portWritelnWaitfor("npm install", cmdPrompt, 500000)
       );
     }
 
@@ -192,7 +192,7 @@
           await portWritelnWaitfor(
             "wget " + event.data.url + " -O " + fileName,
             cmdPrompt,
-            10000
+            20000
           )
         );
         await showDir();
