@@ -161,7 +161,7 @@
 
     async function i2cdetect() {
       var ret = getOutputLines(
-        await portWritelnWaitfor(" i2cdetect -y -r 1", cmdPrompt)
+        await portWritelnWaitfor(" i2cdetect -y 1", cmdPrompt); // await portWritelnWaitfor(" i2cdetect -y -r 1", cmdPrompt); 2022/10/24 remove -r option
       );
       var ht = "<pre><code>     ";
       for (var i = 1; i < ret.length - 1; i++) {
