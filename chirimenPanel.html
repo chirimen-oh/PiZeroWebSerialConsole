@@ -23,8 +23,9 @@
     };
     const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
 
-    var nodeVersion = "v14.17.6";
+    var nodeVersion = "v18.12.0";
     async function setupChirimen() {
+      messageDiv.innerHTML = "START CHIRIMEN SETUP";
       var ret;
 
       ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
@@ -99,6 +100,21 @@
         );
         nodeV += "<br>" + " npm:" + ret[1];
       }
+
+      console.log("Add legacy camera support");
+      // add legacy camera support 2022/10/27
+      ret = getOutputLines(
+        await portWritelnWaitfor(
+          "sudo raspi-config nonint do_camera 0",
+          cmdPrompt
+        )
+      );
+      ret = getOutputLines(
+        await portWritelnWaitfor(
+          "sudo raspi-config nonint do_legacy 0",
+          cmdPrompt
+        )
+      );
 
       // add forever 2021/11/02
       ret = getOutputLines(

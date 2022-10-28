@@ -226,7 +226,9 @@ History
                 waitForSerialIn.CBF &&
                 waitForSerialIn.inputValue.match(waitForSerialIn.RegExp) != null
               ) {
-                waitForSerialIn.CBF(waitForSerialIn.inputValue);
+                waitForSerialIn.CBF(
+                  removeControlChars(waitForSerialIn.inputValue)
+                );
                 clearTimeout(waitForSerialIn.TimeOutID);
                 waitForSerialIn.RegExp = null;
                 waitForSerialIn.CBF = null;
@@ -249,6 +251,13 @@ History
         console.log("Error: Open");
         console.log(error);
       }
+    }
+    function removeControlChars(str) {
+      // https://stackoverflow.com/questions/25245716/remove-all-ansi-colors-styles-from-strings
+      return str.replace(
+        /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+        ""
+      );
     }
     var term;
     var writer;
@@ -1038,12 +1047,14 @@ History
         }
       }
     }
-    
+
     var tempBinaryBuffer;
-    function saveAsBinary(){
+    function saveAsBinary() {
       // http://urusulambda.com/2018/09/15/javascriptでバイナリーデータを作ってファイルを保存す/
-      if ( typeof(tempBinaryBuffer)=="object" ){
-        var blob = new Blob([tempBinaryBuffer.buffer], {type: "octet/stream"});
+      if (typeof tempBinaryBuffer == "object") {
+        var blob = new Blob([tempBinaryBuffer.buffer], {
+          type: "octet/stream",
+        });
         var url = window.URL.createObjectURL(blob);
         var a = document.createElement("a");
         a.href = url;
@@ -1051,7 +1062,7 @@ History
         a.click();
         window.URL.revokeObjectURL(url);
       }
-      tempBinaryBuffer=null;
+      tempBinaryBuffer = null;
     }
 
     function createNewTxt(stat) {
