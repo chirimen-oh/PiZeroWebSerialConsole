@@ -37,10 +37,12 @@
           if (line.indexOf("inet ") >= 0) {
             ipInfo += line + "\n";
             ipaddr = line;
-            break;
+          } else if (line.indexOf("ether ") >= 0) {
+            ipInfo += "MAC Address: " + line.substring(line.indexOf("ether ")+6,line.indexOf("txqueuelen")) + "\n";
           }
         }
       }
+      ipInfo += "\n";
 
       wdf = false;
       ret = getOutputLines(await portWritelnWaitfor(" iwconfig", cmdPrompt));
