@@ -58,21 +58,28 @@
       }
       console.log("ipInfo:", ipInfo);
       console.log("wlInfo:", wlInfo);
+      infoPre.innerText = ipInfo + wlInfo;
 
-      ret = getOutputLines(
-        await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org", cmdPrompt)
-      );
       var pingok = false;
-      if (ret[ret.length - 2].indexOf("rtt") >= 0) {
-        pingok = true;
+      try{
+        ret = getOutputLines(
+          await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org", cmdPrompt)
+        );
+        if (ret[ret.length - 2].indexOf("rtt") >= 0) {
+          pingok = true;
+        }
+      } catch ( e ){
       }
       console.log("ping:", ret[ret.length - 2], pingok);
 
-      infoPre.innerText = ipInfo + wlInfo;
       if (pingok) {
         infoPre.insertAdjacentHTML(
           "beforeend",
           '\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n'
+        );
+      } else {
+        infoPre.insertAdjacentHTML(
+          "beforeend","\nFail to connect chirimen.org.\n"
         );
       }
       if (ipaddr) {
