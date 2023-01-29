@@ -62,15 +62,23 @@
 
       var pingok = false;
       try{
+        /**
         ret = getOutputLines(
           await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org", cmdPrompt)
         );
         if (ret[ret.length - 2].indexOf("rtt") >= 0) {
           pingok = true;
         }
+        **/
+        ret = getOutputLines(
+          await portWritelnWaitfor(" wget --spider -nv https://tutorial.chirimen.org/", cmdPrompt)
+        );
+        if (ret[ret.length - 2].indexOf("200 OK") >= 0) {
+          pingok = true;
+        }
       } catch ( e ){
       }
-      console.log("ping:", ret[ret.length - 2], pingok);
+      console.log("ping(wget):", ret[ret.length - 2], pingok);
 
       if (pingok) {
         infoPre.insertAdjacentHTML(
