@@ -833,8 +833,14 @@ History
     }
 
     async function cd(dir) {
+      var cdStr;
+      if ( dir ) {
+        cdStr = ` cd -- ${escapePath(dir)}`;
+      } else {
+        cdStr = " cd --";
+      }
       var ret = await portWritelnWaitfor(
-        ` cd -- ${escapePath(dir)}`,
+        cdStr,
         cmdPrompt
       );
       ret = await showDir();
