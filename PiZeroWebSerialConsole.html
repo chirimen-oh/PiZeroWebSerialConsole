@@ -834,15 +834,12 @@ History
 
     async function cd(dir) {
       var cdStr;
-      if ( dir ) {
+      if (dir) {
         cdStr = ` cd -- ${escapePath(dir)}`;
       } else {
         cdStr = " cd --";
       }
-      var ret = await portWritelnWaitfor(
-        cdStr,
-        cmdPrompt
-      );
+      var ret = await portWritelnWaitfor(cdStr, cmdPrompt);
       ret = await showDir();
       //console.log(ret);
       currentDir = getDirFromPrompt(ret);
@@ -947,32 +944,37 @@ History
         "more -50"
       );
       //console.log(ret);
-      ret = await portWriteWaitfor("", "--More--");
-      //console.log(ret);
-      var lines = 0;
-      while (true) {
-        var rets = getOutputLines(ret);
-        //console.log(rets,rets[rets.length-1]);
-        for (var i = 0; i < rets.length; i++) {
-          if (rets[i].indexOf("--More--") >= 0) {
+      try {
+        ret = await portWriteWaitfor("", "--More--");
+        //console.log(ret);
+        var lines = 0;
+        while (true) {
+          var rets = getOutputLines(ret);
+          //console.log(rets,rets[rets.length-1]);
+          for (var i = 0; i < rets.length; i++) {
+            if (rets[i].indexOf("--More--") >= 0) {
+              break;
+            }
+            ans += rets[i];
+            ++lines;
+          }
+          if (ret.indexOf("ENDLINE") >= 0) {
             break;
           }
-          ans += rets[i];
-          ++lines;
+          if (transferFileObj.halt == true) {
+            await portWritelnWaitfor("q", cmdPrompt);
+            break;
+          }
+          if (totalLines > 0 && progress) {
+            progressText.innerText =
+              "Loading: " + Math.floor((100 * lines) / totalLines) + "%";
+          }
+          await sleep(5);
+          ret = await portWriteWaitfor(" ", "--More--");
         }
-        if (ret.indexOf("ENDLINE") >= 0) {
-          break;
-        }
-        if (transferFileObj.halt == true) {
-          await portWritelnWaitfor("q", cmdPrompt);
-          break;
-        }
-        if (totalLines > 0 && progress) {
-          progressText.innerText =
-            "Loading: " + Math.floor((100 * lines) / totalLines) + "%";
-        }
-        await sleep(5);
-        ret = await portWriteWaitfor(" ", "--More--");
+      } catch (e) {
+        console.warn("ファイル取得失敗");
+        // 取得失敗
       }
       transferFileObj.transferring = false;
       progress.innerText = "";
@@ -981,13 +983,17 @@ History
         return null;
       }
       console.log(ans.length);
-      ans = base64ToArrayBuffer(ans);
-      console.log(ans);
-      if (isTextFile(path)) {
-        var txtString = new TextDecoder().decode(new Uint8Array(ans)); // arrayBuffer to string
-        return txtString;
+      if (ans.length > 0) {
+        ans = base64ToArrayBuffer(ans);
+        console.log(ans);
+        if (isTextFile(path)) {
+          var txtString = new TextDecoder().decode(new Uint8Array(ans)); // arrayBuffer to string
+          return txtString;
+        } else {
+          return ans;
+        }
       } else {
-        return ans;
+        return null;
       }
     }
 
