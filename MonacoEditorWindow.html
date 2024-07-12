@@ -4,6 +4,20 @@
     <title>monaco test</title>
     <meta charset="utf-8" />
   </head>
+  <body>
+    <div id="menuDiv">
+      JS Editor:
+      <input
+        id="saveBtn"
+        type="button"
+        value="save (ctrl+s)"
+        onclick="saveSource(true)"
+      />
+      <input type="button" value="Javascript Format" onclick="jsFormat(true)" />
+      <span style="font-size: 11px" id="fileNameSpan"></span>
+    </div>
+    <div id="container"></div>
+
   <style>
     html,
     body {
@@ -139,18 +153,5 @@ function getFilePath(){
 
     const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
   </script>
-  <body>
-    <div id="menuDiv">
-      JS Editor:
-      <input
-        id="saveBtn"
-        type="button"
-        value="save (ctrl+s)"
-        onclick="saveSource(true)"
-      />
-      <input type="button" value="Javascript Format" onclick="jsFormat(true)" />
-      <span style="font-size: 11px" id="fileNameSpan"></span>
-    </div>
-    <div id="container" style=""></div>
   </body>
 </html>
