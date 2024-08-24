@@ -167,18 +167,40 @@
       var ret = await getOutputLines(
         await portWritelnWaitfor(" sudo touch /boot/ssh", cmdPrompt)
       );
-      // set WiFi Info
-      var WiFiSet =
-        'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\ncountry=JP\nnetwork={\n   ssid="{SSID}"\n   psk="{PASS}"\n}';
+      // WiFi Setup
       var ssid = ssidInput.value.trim();
       var pass = passInput.value.trim();
-      WiFiSet = WiFiSet.replace("{SSID}", ssid);
-      WiFiSet = WiFiSet.replace("{PASS}", pass);
-      console.log(WiFiSet);
-      infoPre.innerText = WiFiSet;
 
-      await saveFile(str2arrayBuffer(WiFiSet), "wpa_supplicant.conf");
-      await cp("wpa_supplicant.conf", "/boot/wpa_supplicant.conf", true);
+      const WiFiSetup = `\
+#!/bin/sh
+set -eu
+
+SSID=\$1
+PASSWORD=\$2
+DEBIAN_VERSION=$(cut -d . -f 1 /etc/debian_version)
+
+if [ "$DEBIAN_VERSION" -le 11 ]; then
+  WPA_CONF_PATH=/etc/wpa_supplicant/wpa_supplicant.conf
+  sudo sh -c "cat > $WPA_CONF_PATH" <<EOL
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=JP
+network={
+  ssid="$SSID"
+  psk="$PASSWORD"
+}
+EOL
+  sudo wpa_cli -i wlan0 reconfigure
+else
+  sudo nmcli dev wifi connect "$SSID" password "$PASSWORD"
+fi
+`;
+
+      console.log(WiFiSetup);
+      infoPre.innerText = WiFiSetup;
+
+      await saveFile(str2arrayBuffer(WiFiSetup), "wifi_setup.sh");
+      await portWritelnWaitfor(` chmod +x wifi_setup.sh && ./wifi_setup.sh "${ssid}" "${pass}"`, cmdPrompt)
     }
 
     async function reboot() {
