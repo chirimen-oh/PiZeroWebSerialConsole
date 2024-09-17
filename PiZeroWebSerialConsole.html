@@ -940,8 +940,8 @@ History
       portWrite(ctrlc); // こちらもフォアグランドアプリ動作中のものを止める努力をした方が良さそう2021/11/17
       await sleep(100);
       var ret = await portWritelnWaitfor(
-        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | more -50 --exit-on-eof`,
-        "more -50 --exit-on-eof"
+        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | more -50`,
+        "more -50"
       );
       //console.log(ret);
       try {
