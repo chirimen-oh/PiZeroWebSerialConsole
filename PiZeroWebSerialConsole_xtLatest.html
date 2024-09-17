@@ -268,10 +268,10 @@ History
       }
       // term = new Terminal();
       term = new Terminal({ // https://n-guitar.hatenablog.com/entry/2020/11/14/212751
-        //rows: 30, // terminalの行数      
-        cursorBlink: true, 
-        cursorStyle: 'block', 
-        RendererType: 'canvas', 
+        //rows: 30, // terminalの行数
+        cursorBlink: true,
+        cursorStyle: 'block',
+        RendererType: 'canvas',
         fontSize: "18",
         fontFamily: "monospace", // https://willcloud.jp/knowhow/font-family/#font-family-3 sans-serif, serif, system-ui, monospace, cursive, fantasy
         /**
@@ -942,8 +942,8 @@ History
       portWrite(ctrlc); // こちらもフォアグランドアプリ動作中のものを止める努力をした方が良さそう2021/11/17
       await sleep(100);
       var ret = await portWritelnWaitfor(
-        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | more -50`,
-        "more -50"
+        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | more -50 --exit-on-eof`,
+        "more -50 --exit-on-eof"
       );
       //console.log(ret);
       ret = await portWriteWaitfor("", "--More--");
