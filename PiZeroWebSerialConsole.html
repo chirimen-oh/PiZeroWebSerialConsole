@@ -940,8 +940,8 @@ History
       portWrite(ctrlc); // こちらもフォアグランドアプリ動作中のものを止める努力をした方が良さそう2021/11/17
       await sleep(100);
       var ret = await portWritelnWaitfor(
-        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | (more --exit-on-eof -50 2>/dev/null || more -50)`,
-        "(more --exit-on-eof -50 2>/dev/null || more -50)"
+        ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | if [ 12 -le $(cat /etc/debian_version | cut -d. -f1) ]; then more --exit-on-eof -50; else more -50; fi`,
+        "; fi"
       );
       //console.log(ret);
       try {
