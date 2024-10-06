@@ -317,7 +317,7 @@ History
         //console.log("RE:",waitForRegExp);
       }
       if (!timeOutMsOptional) {
-        timeOutMsOptional = 3000;
+        timeOutMsOptional = 30_000;
       }
       return new Promise(function (cbf, failCbf) {
         waitForSerialIn.inputValue = "";
