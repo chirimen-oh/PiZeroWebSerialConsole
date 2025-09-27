@@ -494,7 +494,12 @@ History
         };
         try {
           // TODO: C Quoting の解釈を JSON.parse によって代替しているため \v など一部トークンの解釈に失敗しうる
-          fileInfo.name = JSON.parse(fileInfo.name ?? JSON.stringify(""));
+          let nameField = fileInfo.name ?? JSON.stringify("");
+          // シンボリックリンクの場合、"filename" -> "target" の形式なので、最初の部分のみを取得
+          if (nameField.includes(' -> ')) {
+            nameField = nameField.split(' -> ')[0];
+          }
+          fileInfo.name = JSON.parse(nameField);
         } catch {
           fileInfo.name = "";
         }
