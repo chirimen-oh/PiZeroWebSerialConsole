@@ -557,8 +557,13 @@ History
     }
 
     // .js ファイルをターミナルで node 実行する(出力はそのままターミナルへ流す)
-    function runJsFile(fileName) {
-      portWriteln(` node ${escapePath(fileName)}`);
+    // 実行中のプロセスや入力中の行を ^C で中断してから実行することで、
+    // 何度押しても同じ結果になる(べき等)。先頭にスペースを付けないので
+    // シェル履歴(ログ)にコマンドが残る。
+    async function runJsFile(fileName) {
+      portWrite(ctrlc);
+      await sleep(100);
+      portWriteln(`node ${escapePath(fileName)}`);
     }
 
     async function remveAndList(fileName) {
@@ -1129,7 +1134,13 @@ History
      * @return {string} Bash ANSI-C Quoting による表現
      */
     function escapePath(path) {
-      const jsonString = JSON.stringify(String(path));
+      const str = String(path);
+      // 安全な文字だけならエスケープ不要(そのまま使える)
+      if (/^[A-Za-z0-9._-]+$/.test(str)) {
+        return str;
+      }
+      // フォールバック: Bash ANSI-C Quoting
+      const jsonString = JSON.stringify(str);
       return jsonString.replace(/^"/, `$$'`).replace(/"$/, `'`);
     }
   </script>
