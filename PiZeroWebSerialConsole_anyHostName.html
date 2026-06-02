@@ -554,6 +554,11 @@ History
       console.log(ret);
     }
 
+    // .js ファイルをターミナルで node 実行する(出力はそのままターミナルへ流す)
+    function runJsFile(fileName) {
+      portWriteln(` node ${escapePath(fileName)}`);
+    }
+
     async function remveAndList(fileName) {
       var ret = await rm(fileName);
       console.log("rm:", ret);
@@ -721,6 +726,7 @@ History
         edit: "編集",
         delete: "削除",
         do: "実行",
+        run: "実行",
       },
       en: {
         move: "move",
@@ -728,6 +734,7 @@ History
         edit: "edit",
         delete: "delete",
         do: "do",
+        run: "run",
       },
     };
 
@@ -834,6 +841,22 @@ History
           delCfUl.appendChild(delCfOkLi);
 
           delLi.appendChild(delCfUl);
+
+          if (fname.toLowerCase().endsWith(".js")) {
+            var runLi = document.createElement("li");
+            var runSpan = document.createElement("span");
+            runSpan.innerText = FileManagerMessage[lang].run;
+            runSpan.addEventListener(
+              "click",
+              (function (fname) {
+                return function () {
+                  runJsFile(fname);
+                };
+              })(fname)
+            );
+            runLi.appendChild(runSpan);
+            actUl.appendChild(runLi);
+          }
         }
         li.appendChild(actUl);
         //li.innerHTML="<span>"+fname+"</span>";
