@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -233,7 +233,7 @@ History
                 waitForSerialIn.inputValue.match(waitForSerialIn.RegExp) != null
               ) {
                 waitForSerialIn.CBF(
-                  removeControlChars(waitForSerialIn.inputValue)
+                  removeControlChars(waitForSerialIn.inputValue),
                 );
                 clearTimeout(waitForSerialIn.TimeOutID);
                 waitForSerialIn.RegExp = null;
@@ -262,7 +262,7 @@ History
       // https://stackoverflow.com/questions/25245716/remove-all-ansi-colors-styles-from-strings
       return str.replace(
         /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
-        ""
+        "",
       );
     }
     var term;
@@ -281,7 +281,7 @@ History
       if (navigator.language == "ja") {
         lang = navigator.language;
       }
-      term = new Terminal.Terminal();
+      term = new Terminal.Terminal({ rendererType: "dom" });
       term.open(document.getElementById("terminal"));
       term.onData(function (data) {
         //console.log(data);
@@ -337,7 +337,7 @@ History
         };
         waitForSerialIn.TimeOutID = setTimeout(
           waitForSerialIn.TimeOutCBF,
-          timeOutMsOptional
+          timeOutMsOptional,
         );
         //console.log("portWrite:",writeData,"  cond:",waitForRegExp);
         portWrite(writeData);
@@ -346,12 +346,12 @@ History
     async function portWritelnWaitfor(
       writeData,
       waitForRegExp,
-      timeOutMsOptional
+      timeOutMsOptional,
     ) {
       var ret = await portWriteWaitfor(
         writeData + "\n",
         waitForRegExp,
-        timeOutMsOptional
+        timeOutMsOptional,
       );
       return ret;
     }
@@ -436,7 +436,7 @@ History
       if (lang == "ja") {
         await portWritelnWaitfor(
           " sudo timedatectl set-timezone Asia/Tokyo",
-          cmdPrompt
+          cmdPrompt,
         );
       }
       await sleep(100);
@@ -485,7 +485,7 @@ History
         /^(?<attr>\S+)\s+(?<hlinks>\S+)\s+(?<group>\S+)\s+(?<user>\S+)\s+(?<size>\S+)\s+(?<month>\S+)\s+(?<date>\S+)\s+(?<time>\S+)\s+(?<name>.+)$/;
       var ret = await portWritelnWaitfor(
         " ls -al --quoting-style=c",
-        cmdPrompt
+        cmdPrompt,
       );
       ret = getOutputLines(ret);
       var ans = [];
@@ -501,8 +501,8 @@ History
           // TODO: C Quoting の解釈を JSON.parse によって代替しているため \v など一部トークンの解釈に失敗しうる
           let nameField = fileInfo.name ?? JSON.stringify("");
           // シンボリックリンクの場合、"filename" -> "target" の形式なので、最初の部分のみを取得
-          if (nameField.includes(' -> ')) {
-            nameField = nameField.split(' -> ')[0];
+          if (nameField.includes(" -> ")) {
+            nameField = nameField.split(" -> ")[0];
           }
           fileInfo.name = JSON.parse(nameField);
         } catch {
@@ -516,7 +516,7 @@ History
     async function rm(fileName) {
       // フルパスの場合はどうするか・・
       var ret = getOutputLines(
-        await portWritelnWaitfor(` rm -- ${escapePath(fileName)}`, cmdPrompt)
+        await portWritelnWaitfor(` rm -- ${escapePath(fileName)}`, cmdPrompt),
       );
       console.log(ret);
     }
@@ -530,8 +530,8 @@ History
       var ret = getOutputLines(
         await portWritelnWaitfor(
           ` ${sudoHead} mv -- ${escapePath(fromPath)} ${escapePath(toPath)}`,
-          cmdPrompt
-        )
+          cmdPrompt,
+        ),
       );
       console.log(ret);
     }
@@ -545,8 +545,8 @@ History
       var ret = getOutputLines(
         await portWritelnWaitfor(
           ` ${sudoHead} cp -- ${escapePath(fromPath)} ${escapePath(toPath)}`,
-          cmdPrompt
-        )
+          cmdPrompt,
+        ),
       );
       console.log(ret);
     }
@@ -599,7 +599,7 @@ History
       if (progress) {
         progress.insertAdjacentHTML(
           "afterbegin",
-          "<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />"
+          "<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />",
         );
       }
 
@@ -656,7 +656,7 @@ History
 
     async function wifiScan() {
       var ret = getOutputLines(
-        await portWritelnWaitfor(" sudo iwlist wlan0 scan", cmdPrompt)
+        await portWritelnWaitfor(" sudo iwlist wlan0 scan", cmdPrompt),
       );
       const wifiInfos = [];
       var wifiInfo = {};
@@ -699,7 +699,7 @@ History
       var win = window.open(
         "WiFiPanel.html",
         "wifiPanelWindow",
-        "height=600,width=800"
+        "height=600,width=800",
       );
     }
 
@@ -707,7 +707,7 @@ History
       var win = window.open(
         "chirimenPanel.html",
         "chirimenPanel",
-        "height=650,width=800"
+        "height=650,width=800",
       );
     }
 
@@ -771,7 +771,7 @@ History
               return function () {
                 cd(fname);
               };
-            })(fname)
+            })(fname),
           );
           cdLi.appendChild(cdSpan);
           actUl.appendChild(cdLi);
@@ -785,7 +785,7 @@ History
               return function () {
                 showFile(fname, fsize, editFlg);
               };
-            })(fname, fsize, false)
+            })(fname, fsize, false),
           );
           viewLi.appendChild(viewSpan);
           actUl.appendChild(viewLi);
@@ -799,7 +799,7 @@ History
               return function () {
                 showFile(fname, fsize, editFlg);
               };
-            })(fname, fsize, true)
+            })(fname, fsize, true),
           );
           editLi.appendChild(editSpan);
           actUl.appendChild(editLi);
@@ -825,7 +825,7 @@ History
               return function () {
                 remveAndList(fname);
               };
-            })(fname)
+            })(fname),
           );
           delCfOkLi.appendChild(delCfOkSpan);
           delCfUl.appendChild(delCfOkLi);
@@ -911,7 +911,7 @@ History
       // 短いファイルでないとフロー制御できてなくて破綻する？ obsoluted
       var ret = await portWritelnWaitfor(
         ` base64 -- ${escapePath(path)}`,
-        "\r\n" + cmdPrompt
+        "\r\n" + cmdPrompt,
       );
       ret = getOutputLines(ret);
       var ans = "";
@@ -944,7 +944,7 @@ History
       if (progress) {
         progress.insertAdjacentHTML(
           "afterbegin",
-          "<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />"
+          "<span id='progressText'></span><input id='haltButton' type='button' onclick='haltTransferFile()' value='キャンセル' />",
         );
       }
       var ans = "";
@@ -952,7 +952,7 @@ History
       await sleep(100);
       var ret = await portWritelnWaitfor(
         ` base64 -- ${escapePath(path)} | sed '$a ENDLINE--More--' | if [ 12 -le $(cat /etc/debian_version | cut -d. -f1) ]; then more --exit-on-eof -50; else more -50; fi`,
-        "; fi"
+        "; fi",
       );
       //console.log(ret);
       try {
@@ -1040,7 +1040,7 @@ History
           win = window.open(
             "MonacoEditorWindow.html",
             "textSourceWindow",
-            "height=600,width=800"
+            "height=600,width=800",
           );
           async function setEditorVal(val, editFlg) {
             await sleep(100);
