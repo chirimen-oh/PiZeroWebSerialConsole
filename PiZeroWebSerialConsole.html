@@ -182,6 +182,12 @@ History
     async function startConnection() {
       // Web Serial APIでRasoberry PiのUSB OTG Serialをつなぐ
       try {
+        if (port && port.readable) {
+          // 既に接続(オープン)済みなら再オープンしない。
+          // ログイン失敗時の autoLogInPiZero(true) 再帰で再びここに来ると
+          // "InvalidStateError: The port is already open." になるための対策。
+          return;
+        }
         port = await navigator.serial.requestPort();
         await port.open({ baudRate: 115200 });
         serialConnecting = true;
