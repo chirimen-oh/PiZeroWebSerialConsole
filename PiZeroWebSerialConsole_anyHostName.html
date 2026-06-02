@@ -281,7 +281,9 @@ History
       if (navigator.language == "ja") {
         lang = navigator.language;
       }
-      term = new Terminal.Terminal();
+      // 既定フォント "courier-new, courier, monospace" は環境(特にLinux)で
+      // 半角グリフが描画されず日本語(全角)だけ見える不具合になるため明示指定する
+      term = new Terminal.Terminal({ rendererType: "dom", fontFamily: "monospace" });
       term.open(document.getElementById("terminal"));
       term.onData(function (data) {
         //console.log(data);
