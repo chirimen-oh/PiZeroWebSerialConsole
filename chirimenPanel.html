@@ -8,6 +8,11 @@
     var appDir = "~/myApp"; // 絶対パス
     var absAppDir = "/home/pi/myApp/";
 
+    // 常駐アプリのログと PID はホーム直下に置く(ファイルマネージャから見える)
+    var residentLogFile = "$HOME/myApp.log";
+    var residentPidFile = "$HOME/myApp.pid";
+    var residentCronTag = "chirimenResidentApp"; // crontab @reboot 行の目印
+
     onload = async function () {
       window.addEventListener("message", receiveMessage, false);
       portWritelnWaitfor = window.opener.portWritelnWaitfor;
@@ -116,22 +121,6 @@
         )
       );
 
-      // add forever 2021/11/02
-      ret = getOutputLines(
-        await portWritelnWaitfor("which forever", cmdPrompt)
-      );
-      if (ret[1].indexOf("forever") == -1) {
-        messageDiv.innerHTML =
-          nodeV + "<br><br>Installing forever command for Node.js";
-        ret = getOutputLines(
-          await portWritelnWaitfor(
-            "sudo npm install -g forever",
-            cmdPrompt,
-            300000
-          )
-        );
-      }
-
       messageDiv.innerHTML =
         nodeV +
         "<br><br>NEXT building CHIRIMEN environment and its libraries on " +
@@ -231,84 +220,103 @@
       return jsApps;
     }
 
-    async function stopAllForeverApp() {
-      var ret = getOutputLines(
-        await portWritelnWaitfor(" forever stopall", cmdPrompt, 20000)
+    // === 常駐アプリ管理 ======================================================
+    // forever を廃止し、crontab の @reboot と getJsApps() を 1 次ソースにする。
+    //   ・どのアプリを常駐させるか → crontab の @reboot 行(目印コメント付き)
+    //   ・常駐の即時起動           → setsid + node --watch(端末切断後も生存)
+    //   ・ログと PID               → ホーム直下(ファイルマネージャから見える)
+    // cron は ~/.profile を読まないので bash -lc で node に PATH を通す。
+
+    // 常駐起動の bash -lc 本体(cron / 即時起動 で共用)。$1 に .js ファイル名を渡す。
+    // echo $$ で PID を記録し exec で node に置換するため、PID ファイルには
+    // node 本体(= setsid によりプロセスグループの先頭)の PID が入る。
+    function residentLaunchScript() {
+      return `cd ${absAppDir} && echo $$ > "${residentPidFile}" && exec node --watch "$1" >> "${residentLogFile}" 2>&1`;
+    }
+
+    // crontab に書き込む @reboot 行。行全体は cron の sh -c に渡される。
+    function residentCronLine(appName) {
+      return `@reboot setsid bash -lc '${residentLaunchScript()}' _ '${appName}' # ${residentCronTag}`;
+    }
+
+    // 文字列をシェルの単一引用符で安全に囲む(中の ' は '\'' に置換)。
+    function shSingleQuote(str) {
+      return "'" + String(str).replace(/'/g, "'\\''") + "'";
+    }
+
+    // @reboot 行を 1 件だけ設定する(既存の chirimen / forever 行は除去して上書き)。
+    async function setResidentCron(appName) {
+      await portWritelnWaitfor(
+        ` { crontab -l 2>/dev/null | grep -vE '${residentCronTag}|forever'; ` +
+          `echo ${shSingleQuote(residentCronLine(appName))}; } | crontab -`,
+        cmdPrompt,
+        20000,
       );
     }
 
-    async function setForeverApp(appName) {
-      var ret = getOutputLines(
-        await portWritelnWaitfor(
-          ` forever start -w ${escapePath(appName)}`,
-          cmdPrompt,
-          20000
-        )
+    // @reboot 行を除去する(他の cron 行は残す)。
+    async function clearResidentCron() {
+      await portWritelnWaitfor(
+        ` crontab -l 2>/dev/null | grep -vE '${residentCronTag}|forever' | crontab -`,
+        cmdPrompt,
+        20000,
       );
     }
 
-    async function changeForeverApp(event) {
-      var ret = getOutputLines(
-        await portWritelnWaitfor(" cd " + absAppDir, cmdPrompt)
+    // 常駐アプリを今すぐ起動する(setsid で端末から切り離す)。
+    async function startResidentNow(appName) {
+      await portWritelnWaitfor(
+        ` setsid bash -lc '${residentLaunchScript()}' _ ${escapePath(appName)}` +
+          ` </dev/null >/dev/null 2>&1 &`,
+        cmdPrompt,
+        20000,
       );
+    }
+
+    // 起動中の常駐アプリを停止する(PID ファイルのプロセスグループごと kill)。
+    async function stopResidentNow() {
+      await portWritelnWaitfor(
+        ` if [ -f "${residentPidFile}" ]; then ` +
+          `kill -- -"$(cat "${residentPidFile}")" 2>/dev/null || ` +
+          `kill "$(cat "${residentPidFile}")" 2>/dev/null; ` +
+          `rm -f "${residentPidFile}"; fi`,
+        cmdPrompt,
+        20000,
+      );
+    }
+
+    async function stopResidentApp() {
+      await stopResidentNow();
+      await clearResidentCron();
+    }
+
+    async function startResidentApp(appName) {
+      await setResidentCron(appName);
+      await startResidentNow(appName);
+    }
+
+    async function changeResidentApp(event) {
+      await portWritelnWaitfor(" cd " + absAppDir, cmdPrompt);
       await window.opener.showDir();
       var apName = event.target.value;
-      disableForeverAppTable(true);
-      console.log("changeForeverApp:", apName);
+      disableResidentAppTable(true);
+      console.log("changeResidentApp:", apName);
       if (apName == "StopAllApps") {
         subMsgDiv.innerText = "Start to stop the resident apps.";
-        await stopAllForeverApp(apName);
-        await delForeverRebootCron(apName);
+        await stopResidentApp();
       } else {
         subMsgDiv.innerText = "Start changing resident apps. Ph. 1/2";
-        await stopAllForeverApp();
+        await stopResidentApp();
         subMsgDiv.innerText = "Start changing resident apps. Ph. 2/2";
-        await setForeverApp(apName);
-        await setForeverRebootCron(apName);
+        await startResidentApp(apName);
       }
       await sleep(2000);
 
-      await foreverPanel();
+      await appPanel();
     }
 
-    async function setForeverRebootCron(apName) {
-      var ret = getOutputLines(
-        await portWritelnWaitfor(
-          '  echo -e "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n@reboot /usr/local/bin/forever start ' +
-            absAppDir +
-            apName +
-            ' >> /tmp/chirimenCronSetting.log 2>&1" > chirimenCronSetting.txt',
-          cmdPrompt
-        )
-      );
-      ret = getOutputLines(
-        await portWritelnWaitfor(
-          " crontab ./chirimenCronSetting.txt",
-          cmdPrompt
-        )
-      );
-      ret = getOutputLines(
-        await portWritelnWaitfor(" rm ./chirimenCronSetting.txt", cmdPrompt)
-      );
-    }
-
-    async function delForeverRebootCron() {
-      var ret = getOutputLines(
-        await portWritelnWaitfor(" touch ./chirimenCronSetting.txt", cmdPrompt)
-      );
-      ret = getOutputLines(
-        await portWritelnWaitfor(
-          " crontab ./chirimenCronSetting.txt",
-          cmdPrompt
-        )
-      );
-      ret = getOutputLines(
-        await portWritelnWaitfor(" rm ./chirimenCronSetting.txt", cmdPrompt)
-      );
-    }
-
-    function disableForeverAppTable(disabled) {
-      var trs = document.getElementById("foreverAppTable").children;
+    function disableResidentAppTable(disabled) {
+      var trs = document.getElementById("residentAppTable").children;
       for (var tr of trs) {
         if (tr.children[2].firstElementChild) {
           tr.children[2].firstElementChild.disabled = disabled;
@@ -316,7 +324,7 @@
       }
     }
 
-    async function foreverPanel() {
+    async function appPanel() {
       var apps = await getJsApps();
       messageDiv.innerHTML = "";
       var subMsgDiv = document.createElement("div");
@@ -325,17 +333,16 @@
       console.log(apps);
       var tbl = document.createElement("table");
       tbl.setAttribute("border", "1");
-      tbl.id = "foreverAppTable";
+      tbl.id = "residentAppTable";
       var trs = {};
       var tr = document.createElement("tr");
       tr.innerHTML = "<th>Now Running</th><th>App Name</th><th>Select</th>";
       tbl.appendChild(tr);
-      var tr = document.createElement("tr");
+      tr = document.createElement("tr");
       tr.innerHTML =
-        '<td>-</td><td>STOP ALL APPS</td><td><input type="radio" name="runApp" value="StopAllApps" disabled onchange="changeForeverApp(event)"></td>';
+        '<td>-</td><td>STOP ALL APPS</td><td><input type="radio" name="runApp" value="StopAllApps" disabled onchange="changeResidentApp(event)"></td>';
       trs["StopAllApps"] = tr;
       tbl.appendChild(tr);
-      var td3 = document.createElement("td");
       for (var app of apps) {
         tr = document.createElement("tr");
         var td1 = document.createElement("td");
@@ -345,7 +352,7 @@
         td3.innerHTML =
           '<input type="radio" name="runApp" value="' +
           app +
-          '" disabled onchange="changeForeverApp(event)">';
+          '" disabled onchange="changeResidentApp(event)">';
         tr.appendChild(td1);
         tr.appendChild(td2);
         tr.appendChild(td3);
@@ -354,52 +361,36 @@
       }
       subMsgDiv.innerText = "Checking running apps";
       messageDiv.appendChild(tbl);
-      showForeverApp(trs);
+      showResidentApp(trs);
     }
 
-    async function showForeverApp(trs) {
-      console.log("showForeverApp:", trs);
+    // crontab -l を 1 次ソースに、どのアプリが常駐設定かを表に反映する。
+    async function showResidentApp(trs) {
+      console.log("showResidentApp:", trs);
       var ret = getOutputLines(
-        await portWritelnWaitfor(" forever list --plain", cmdPrompt, 20000)
+        await portWritelnWaitfor(" crontab -l", cmdPrompt, 20000),
       );
       subMsgDiv.innerText = "-";
-      var isRunning = false;
-      var fpNames = [];
-      for (var i = 0; i < ret.length - 1; i++) {
-        var line = ret[i];
-        console.log(line);
-        if (line.indexOf("No forever processes running") >= 0) {
-          break;
-        } else if (line.indexOf("Forever processes running") >= 0) {
-          isRunning = true;
-          console.log("isRun");
-        } else if (isRunning) {
-          var fpi = line.split(/[\s]+/);
-          var fpName = fpi[4].trim();
-          console.log(fpName);
-          if (fpName.endsWith(".js")) {
-            if (fpName.indexOf(absAppDir) >= 0) {
-              fpName = fpName.substring(
-                fpName.indexOf(absAppDir) + absAppDir.length
-              );
-            }
-            fpNames.push(fpName);
+      var current = null;
+      for (var line of ret) {
+        if (
+          line.indexOf(residentCronTag) >= 0 &&
+          line.indexOf("@reboot") >= 0
+        ) {
+          var m = line.match(/_ '([^']*)' # /);
+          if (m) {
+            current = m[1];
           }
         }
       }
-      console.log(fpNames);
-      if (isRunning) {
-        for (var fpName of fpNames) {
-          console.log(fpName, trs[fpName], trs);
-          if (trs[fpName]) {
-            trs[fpName].children[0].innerText = "RUNNING";
-            trs[fpName].children[2].firstElementChild.checked = true;
-          }
-        }
+      console.log("resident app:", current);
+      if (current && trs[current]) {
+        trs[current].children[0].innerText = "RUNNING";
+        trs[current].children[2].firstElementChild.checked = true;
       } else {
         trs["StopAllApps"].children[2].firstElementChild.checked = true;
       }
-      disableForeverAppTable(false);
+      disableResidentAppTable(false);
     }
 
     /**
@@ -418,7 +409,7 @@
     <input type="button" onclick="setupChirimen()" value="setup CHIRIMEN" />
     <input type="button" onclick="i2cdetect()" value="i2cdetect" />
     <input type="button" onclick="examplePanel()" value="Get Examples" />
-    <input type="button" onclick="foreverPanel()" value="Resident App Conf." />
+    <input type="button" onclick="appPanel()" value="Resident App Conf." />
     <div id="messageDiv" style="width: 100%; height: 600px">
       <img height="600" src="wallpaperS.png" />
     </div>
