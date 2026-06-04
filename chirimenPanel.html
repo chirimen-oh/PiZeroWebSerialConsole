@@ -5,12 +5,7 @@
     <meta charset="utf-8" />
   </head>
   <script>
-    var appDir = "~/myApp"; // 絶対パス
-    var absAppDir = "/home/pi/myApp/";
-
-    // 常駐アプリのログと PID はホーム直下に置く(ファイルマネージャから見える)
-    var residentLogFile = "$HOME/myApp.log";
-    var residentPidFile = "$HOME/myApp.pid";
+    var appDir = "~/myApp";
     var residentCronTag = "chirimenResidentApp"; // crontab @reboot 行の目印
 
     onload = async function () {
@@ -207,7 +202,7 @@
 
     async function getJsApps() {
       var ret = getOutputLines(
-        await portWritelnWaitfor(" cd " + absAppDir, cmdPrompt),
+        await portWritelnWaitfor(` cd ${appDir}`, cmdPrompt),
       );
       await window.opener.showDir();
       var files = (await window.opener.lsal()).files;
@@ -223,15 +218,15 @@
     // === 常駐アプリ管理 ======================================================
     // forever を廃止し、crontab の @reboot と getJsApps() を 1 次ソースにする。
     //   ・どのアプリを常駐させるか → crontab の @reboot 行(目印コメント付き)
-    //   ・常駐の即時起動           → setsid + node --watch(端末切断後も生存)
-    //   ・ログと PID               → ホーム直下(ファイルマネージャから見える)
+    //   ・常駐の即時起動           → setsid + 監視ループ(端末切断後も生存・編集で再読込・落ちたら再起動)
+    //   ・PID は ~/myApp/.pid、ログは実行ファイルと同じ場所({ベース名}.log)
     // cron は ~/.profile を読まないので bash -lc で node に PATH を通す。
 
     // 常駐起動の bash -lc 本体(cron / 即時起動 で共用)。$1 に .js ファイル名を渡す。
     // echo $$ で PID を記録し exec で node に置換するため、PID ファイルには
     // node 本体(= setsid によりプロセスグループの先頭)の PID が入る。
     function residentLaunchScript() {
-      return `cd ${absAppDir} && echo $$ > "${residentPidFile}" && exec node --watch "$1" >> "${residentLogFile}" 2>&1`;
+      return `cd ${appDir} && echo $$ > ${appDir}/.pid && exec node --watch "$1" >> "\${1%.js}.log" 2>&1`;
     }
 
     // crontab に書き込む @reboot 行。行全体は cron の sh -c に渡される。
@@ -247,8 +242,7 @@
     // @reboot 行を 1 件だけ設定する(既存の chirimen / forever 行は除去して上書き)。
     async function setResidentCron(appName) {
       await portWritelnWaitfor(
-        ` { crontab -l 2>/dev/null | grep -vE '${residentCronTag}|forever'; ` +
-          `echo ${shSingleQuote(residentCronLine(appName))}; } | crontab -`,
+        ` { crontab -l 2>/dev/null | grep -vE '${residentCronTag}|forever'; echo ${shSingleQuote(residentCronLine(appName))}; } | crontab -`,
         cmdPrompt,
         20000,
       );
@@ -266,8 +260,7 @@
     // 常駐アプリを今すぐ起動する(setsid で端末から切り離す)。
     async function startResidentNow(appName) {
       await portWritelnWaitfor(
-        ` setsid bash -lc '${residentLaunchScript()}' _ ${escapePath(appName)}` +
-          ` </dev/null >/dev/null 2>&1 &`,
+        ` setsid bash -lc '${residentLaunchScript()}' _ ${escapePath(appName)} </dev/null >/dev/null 2>&1 &`,
         cmdPrompt,
         20000,
       );
@@ -276,10 +269,12 @@
     // 起動中の常駐アプリを停止する(PID ファイルのプロセスグループごと kill)。
     async function stopResidentNow() {
       await portWritelnWaitfor(
-        ` if [ -f "${residentPidFile}" ]; then ` +
-          `kill -- -"$(cat "${residentPidFile}")" 2>/dev/null || ` +
-          `kill "$(cat "${residentPidFile}")" 2>/dev/null; ` +
-          `rm -f "${residentPidFile}"; fi`,
+        ` \
+if [ -f ${appDir}/.pid ]; then \
+  kill -- -"$(cat ${appDir}/.pid)" 2>/dev/null || \
+  kill "$(cat ${appDir}/.pid)" 2>/dev/null; \
+  rm -f ${appDir}/.pid; \
+fi`,
         cmdPrompt,
         20000,
       );
@@ -296,7 +291,7 @@
     }
 
     async function changeResidentApp(event) {
-      await portWritelnWaitfor(" cd " + absAppDir, cmdPrompt);
+      await portWritelnWaitfor(` cd ${appDir}`, cmdPrompt);
       await window.opener.showDir();
       var apName = event.target.value;
       disableResidentAppTable(true);
