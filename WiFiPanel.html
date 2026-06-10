@@ -160,9 +160,6 @@
     }
 
     async function setWiFi() {
-      var ret = await getOutputLines(
-        await portWritelnWaitfor(" cd", cmdPrompt)
-      );
       // enable ssh
       var ret = await getOutputLines(
         await portWritelnWaitfor(" sudo touch /boot/ssh", cmdPrompt)
@@ -199,8 +196,9 @@ fi
       console.log(WiFiSetup);
       infoPre.innerText = WiFiSetup;
 
-      await saveFile(str2arrayBuffer(WiFiSetup), "wifi_setup.sh");
-      await portWritelnWaitfor(` chmod +x wifi_setup.sh && ./wifi_setup.sh "${ssid}" "${pass}"`, cmdPrompt)
+      const scriptPath = "/tmp/wifi_setup.sh";
+      await saveFile(str2arrayBuffer(WiFiSetup), scriptPath);
+      await portWritelnWaitfor(` chmod +x ${scriptPath} && ${scriptPath} "${ssid}" "${pass}"`, cmdPrompt)
     }
 
     async function reboot() {
