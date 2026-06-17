@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -15,13 +15,19 @@
       saveFile = window.opener.saveFile;
       cp = window.opener.cp;
       closeConnection = window.opener.closeConnection;
-      WiFiShow();
+      document.querySelector("#ssidInput").focus();
+      document.querySelector("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await setWiFi();
+        await wifiStat();
+      });
+      await WiFiShow();
     };
     const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
 
     async function wifiStat() {
       var ret = getOutputLines(
-        await portWritelnWaitfor(" ifconfig", cmdPrompt)
+        await portWritelnWaitfor(" ifconfig", cmdPrompt),
       );
       var wdf = false;
       var ipInfo = "wlan0: ",
@@ -38,7 +44,13 @@
             ipInfo += line + "\n";
             ipaddr = line;
           } else if (line.indexOf("ether ") >= 0) {
-            ipInfo += "MAC Address: " + line.substring(line.indexOf("ether ")+6,line.indexOf("txqueuelen")) + "\n";
+            ipInfo +=
+              "MAC Address: " +
+              line.substring(
+                line.indexOf("ether ") + 6,
+                line.indexOf("txqueuelen"),
+              ) +
+              "\n";
           }
         }
       }
@@ -61,7 +73,7 @@
       infoPre.innerText = ipInfo + wlInfo;
 
       var pingok = false;
-      try{
+      try {
         /**
         ret = getOutputLines(
           await portWritelnWaitfor(" ping -c 1 tutorial.chirimen.org", cmdPrompt)
@@ -71,23 +83,26 @@
         }
         **/
         ret = getOutputLines(
-          await portWritelnWaitfor(" wget --spider -nv https://tutorial.chirimen.org/", cmdPrompt)
+          await portWritelnWaitfor(
+            " wget --spider -nv https://tutorial.chirimen.org/",
+            cmdPrompt,
+          ),
         );
         if (ret[ret.length - 2].indexOf("200 OK") >= 0) {
           pingok = true;
         }
-      } catch ( e ){
-      }
+      } catch (e) {}
       console.log("ping(wget):", ret[ret.length - 2], pingok);
 
       if (pingok) {
         infoPre.insertAdjacentHTML(
           "beforeend",
-          '\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n'
+          '\n<span style="color:blue">Confirmed connection to chirimen.org.</span>\n',
         );
       } else {
         infoPre.insertAdjacentHTML(
-          "beforeend","\nFail to connect chirimen.org.\n"
+          "beforeend",
+          "\nFail to connect chirimen.org.\n",
         );
       }
       if (ipaddr) {
@@ -98,14 +113,14 @@
           "beforeend",
           '\n<span style="color:blue;font-size:18px">Raspberry Pi\'s IP Address: ' +
             ipaddr +
-            "</span>"
+            "</span>",
         );
       }
     }
 
     async function wifiScan() {
       var ret = getOutputLines(
-        await portWritelnWaitfor(" sudo iwlist wlan0 scan", cmdPrompt)
+        await portWritelnWaitfor(" sudo iwlist wlan0 scan", cmdPrompt),
       );
       const wifiInfos = [];
       var wifiInfo = {};
@@ -162,7 +177,7 @@
     async function setWiFi() {
       // enable ssh
       var ret = await getOutputLines(
-        await portWritelnWaitfor(" sudo touch /boot/ssh", cmdPrompt)
+        await portWritelnWaitfor(" sudo touch /boot/ssh", cmdPrompt),
       );
       // WiFi Setup
       var ssid = ssidInput.value.trim();
@@ -198,34 +213,44 @@ fi
 
       const scriptPath = "/tmp/wifi_setup.sh";
       await saveFile(str2arrayBuffer(WiFiSetup), scriptPath);
-      await portWritelnWaitfor(` chmod +x ${scriptPath} && ${scriptPath} "${ssid}" "${pass}"`, cmdPrompt)
+      await portWritelnWaitfor(
+        ` chmod +x ${scriptPath} && ${scriptPath} "${ssid}" "${pass}"`,
+        cmdPrompt,
+      );
     }
 
     async function reboot() {
       var ret = await getOutputLines(
-        await portWritelnWaitfor(" sudo reboot", cmdPrompt)
+        await portWritelnWaitfor(" sudo reboot", cmdPrompt),
       );
       closeConnection();
     }
   </script>
 
-  <body>
+  <body style="margin-block-end: 0">
     <button onclick="WiFiShow()">wifi Scan</button>
     <button onclick="wifiStat()">wifi Info</button>
 
-    <div style="height: 500px; overflow: auto">
-      <pre id="infoPre"></pre>
-    </div>
-    <div>
-      SSID:<input id="ssidInput" type="text" />, PASS PHRASE:<input
-        id="passInput"
-        type="text"
-      />
-      <input type="button" value="SET WiFi" onclick="setWiFi()" /><input
-        type="button"
-        value="Reboot"
-        onclick="reboot()"
-      />
-    </div>
+    <pre style="min-height: calc(100vb - 100px)" id="infoPre"></pre>
+    <form
+      style="
+        position: sticky;
+        bottom: 0;
+        padding: 8px;
+        background: white;
+        border-block-start: 1px solid lightgray;
+      "
+    >
+      <label>
+        SSID:
+        <input id="ssidInput" type="text" />
+      </label>
+      <label>
+        PASS PHRASE:
+        <input id="passInput" type="text" />
+      </label>
+      <input type="submit" value="SET WiFi" />
+      <input type="button" value="Reboot" onclick="reboot()" />
+    </form>
   </body>
 </html>
