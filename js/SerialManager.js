@@ -1,5 +1,15 @@
-export class SerialManager {
+/**
+ * 拡張型シリアル通信マネージャー (Vanilla JS / ブラウザ標準 API 準拠)
+ * * 【特徴】
+ * 1. Web Serial API のロック管理を安全に行う try-finally 設計
+ * 2. 同時実行を防ぐ FIFO コマンドキュー搭載
+ * 3. EventTarget 継承によるネイティブイベント駆動
+ * 4. 外部から監視ルールを追加できるプラグイン・アーキテクチャ
+ */
+export class SerialManager extends EventTarget {
 	constructor() {
+		super(); // EventTarget の初期化
+		
 		this.port = null;
 		this.reader = null;
 		this.writer = null;
@@ -11,8 +21,25 @@ export class SerialManager {
 		// --- 追加: キュー管理用の変数 ---
 		this.queue = [];             // 実行待ちのコマンドを格納するキュー
 		this.isProcessingQueue = false; // 現在キューを消化中かどうかのフラグ
+		
+		// 拡張イベント監視用の変数
+		this.evtBuf = "";   // ストリーム解析用バッファ
+		this.watchers = {}; // 登録されたウォッチャー（プラグイン）の格納庫
 	}
 
+	/**
+	 * 外部から「イベント名」と「監視ロジック」を登録する
+	 * @param {string} eventName - 発火させるカスタムイベント名
+	 * @param {Object} watcherConfig - parse({ lines, buffer }) を持つオブジェクト
+	 */
+	addWatcher(eventName, watcherConfig) {
+		this.watchers[eventName] = watcherConfig;
+	}
+	
+	
+	/**
+	 * シリアルポートへの接続を開始する
+	 */
 	async connect(baudRate = 115200) {
 		// 既に接続(オープン)済みなら再オープンしない。
 		// ログイン失敗時の autoLogInPiZero(true) 再試行で再びここに来ると
@@ -27,6 +54,9 @@ export class SerialManager {
 		this.startReadLoop();
 	}
 
+	/**
+	 * 接続を切断し、待機タスクをクリーンアップする
+	 */
 	async disconnect() {
 		this.isConnecting = false;
 
@@ -74,6 +104,9 @@ export class SerialManager {
 		}
 	}
 
+	/**
+	 * データをシリアルポートへ直接書き込む（低レベルメソッド）
+	 */
 	async write(data) {
 		if (!this.port) return;
 		const encoder = new TextEncoder();
@@ -85,7 +118,9 @@ export class SerialManager {
 		}
 	}
 
-	// 外部から呼ばれるメソッド（直接実行せずキューに積む） ---
+	/**
+	 * 外部から呼ばれるコマンド実行メソッド（キューに積まれて順番に実行される）
+	 */
 	async writeAndWaitFor(data, expectedRegExp, timeoutMs = 30000) {
 		return new Promise((resolve, reject) => {
 			// タスクをキューの末尾に追加
@@ -95,7 +130,9 @@ export class SerialManager {
 		});
 	}
 
-	// キューを順番に消化する内部メソッド ---
+	/**
+	 * キューを FIFO で順番に消化する内部メソッド
+	 */
 	async processQueue() {
 		// 既に処理中、またはキューが空なら何もしない
 		if (this.isProcessingQueue || this.queue.length === 0) return;
@@ -149,6 +186,9 @@ export class SerialManager {
 		});
 	}
 
+	/**
+	 * バックグラウンドでデータを読み込み続けるメインループ
+	 */
 	async startReadLoop() {
 		try {
 			while (this.port && this.port.readable && this.isConnecting) {
@@ -167,6 +207,9 @@ export class SerialManager {
 
 							this.receiveBuffer += decoded;
 							this.checkWaiter(); // 受信のたびに待機条件を満たしたかチェック
+							
+							// 常時監視イベント用の解析処理へデータを流す
+							this._parseStream(decoded);
 						}
 					}
 				} catch (e) {
@@ -184,6 +227,32 @@ export class SerialManager {
 		}
 	}
 
+	/**
+	 * 常時流れてくるストリームを解析し、登録されたウォッチャーを走らせる
+	 */
+	_parseStream(chunk) {
+		this.evtBuf += chunk;
+		let lines = this.evtBuf.split(/\r?\n/);
+		this.evtBuf = lines.pop() || ""; // 未確定の末尾（プロンプトなど）をバッファに残す
+
+		// ウォッチャーが扱いやすいよう「制御文字なし・トリム済み」のデータを用意
+		const cleanLines = lines.map(line => this.removeControlChars(line).trim());
+		const cleanBuffer = this.removeControlChars(this.evtBuf);
+
+		// 登録されているすべてのウォッチャーにデータを分配して実行
+		for (const [eventName, watcher] of Object.entries(this.watchers)) {
+			const detail = watcher.parse({ lines: cleanLines, buffer: cleanBuffer });
+
+			// ウォッチャーから解析結果（undefined 以外）が返ってきたら、カスタムイベントを発火！
+			if (detail !== undefined) {
+				this.dispatchEvent(new CustomEvent(eventName, { detail }));
+			}
+		}
+	}
+
+	/**
+	 * 従来の await 判定用チェックメソッド
+	 */
 	checkWaiter() {
 		if (!this.currentWaiter) return;
 
@@ -197,6 +266,9 @@ export class SerialManager {
 		}
 	}
 
+	/**
+	 * ターミナルの装飾文字（ANSI エスケープシーケンス）を除去するユーティリティ
+	 */
 	removeControlChars(str) {
 		return str.replace(
 			/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
