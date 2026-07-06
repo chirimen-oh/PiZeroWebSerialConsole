@@ -25,7 +25,7 @@ USB OTG Serialのコンソールが有効化されたRaspberry Pi OSが動作し
 * PCでRaspberry Pi Zeroが認識されたことを確認します (Windows10のデバイスマネージャの例) 
   * 起動してUSBデバイスとして出現するまでにしばらく(数十秒)かかります)
   ![OTG PORT Information on device manager](imgs/OTG_PORT_W10.png)
-* [**こちらのページにブラウザでアクセス**](https://chirimen.org/PiZeroWebSerialConsole/PiZeroWebSerialConsole.html)(Chrome, Edgeで確認)
+* [**こちらのページにブラウザでアクセス**](./PiZeroWebSerialConsole.html)(Chrome, Edge, Firefoxで確認)
 * CONNECTボタンを押す
   * 接続ダイアログが出現
   ![connection dialog](imgs/SerialDialog.png)

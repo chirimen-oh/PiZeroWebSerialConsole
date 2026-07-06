@@ -1,0 +1,270 @@
+/* =========================================
+   1. ベーススタイル（全体の初期設定）
+   ========================================= */
+html, body {
+	height: 100vh;
+	margin: 0;
+	padding: 0 10px;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+}
+
+table {
+	table-layout: fixed;
+}
+
+input {
+	font-size: 9px;
+}
+
+/* =========================================
+   1.1. appHeader
+   ========================================= */
+/* ヘッダー全体（タイトルとリンクの左右振り分け） */
+#appHeader {
+	display: flex;
+	justify-content: space-between; /* 左右の端に配置 */
+	align-items: center;            /* 縦方向の真ん中で揃える */
+	margin: 4px 0 6px 0;
+}
+
+/* アプリケーションタイトル */
+#appTitle {
+	font-size: 12px;
+	color: #555;
+	margin: 0;
+	font-weight: bold;
+	letter-spacing: 0.5px;
+}
+
+/* 右上のアイコン付きリンク */
+#projectLink {
+	display: flex;
+	align-items: center;
+	gap: 6px;                       /* アイコンと文字の間の隙間 */
+	font-size: 11px;
+	color: #f73;
+	text-decoration: none;
+	transition: color 0.2s ease;
+}
+
+/* CHIRIMEN アイコンのスタイル */
+#projectIcon {
+	width: 18px;
+	height: 18px;
+	border-radius: 4px;             /* アイコンの角を優しく丸める */
+	object-fit: cover;
+}
+
+#projectLink:hover {
+	color: #007bff;
+}
+#projectLink:hover span {
+	text-decoration: underline;    /* ホバー時は文字だけに下線 */
+}
+
+/* =========================================
+   2. レイアウト（Flexboxによるコンテナ分割）
+   ========================================= */
+#mainContainer {
+	display: flex;
+	flex: 1; /* 残りの高さを占有 */
+	min-height: 0; /* Flexboxの子要素があふれないようにするおまじない */
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+/* ターミナル側（広がる割合:7、縮む割合:1、基準幅:740px） */
+#terminalContainer {
+	flex: 7 1 740px;
+	min-width: 400px; 
+	position: relative;
+}
+
+#terminal {
+	width: 100%;
+	height: 100%;
+}
+
+/* ファイルリスト側（広がる割合:1、縮む割合:0、基準幅:200px） */
+#fileListContainer {
+	flex: 1 0 200px; 
+	min-width: 200px;
+	display: flex;
+	flex-direction: column;
+}
+
+#fileListTable, .filelistdiv {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #ccc;
+	background-color: #f9f9f9;
+	color: #000;
+	font-size: 10px;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+/* =========================================
+   3. ファイルリストのUI（ホバー・階層メニュー）
+   ========================================= */
+.filelist {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+.filelist li {
+	position: relative;
+	width: 100%;
+	height: 20px;
+	white-space: nowrap;
+}
+
+.filelist > li,
+.filelist li:last-child,
+.filelist li:hover > ul > li,
+.filelist li > ul > li:last-child {
+	border-bottom: none;
+}
+
+.filelist li span {
+	display: block;
+	width: 100%;
+	height: 20px;
+	color: #fff;
+	font-size: 14px;
+	line-height: 1.4;
+	padding: 0 3px;
+	background: #356;
+	border-bottom: 1px solid #eee;
+	box-sizing: border-box;
+	text-decoration: none;
+}
+
+.filelist > li:hover > span {
+	color: orange;
+	background: #46f;
+	cursor: pointer;
+}
+
+.filelist > li:hover > span > label {
+	cursor: pointer;
+}
+
+.filelist > li li:hover > span {
+	color: #611;
+	background: #d4f;
+	cursor: pointer;
+}
+
+.filelist li:hover > ul > li {
+	overflow: visible;
+	top: -20px;
+	left: 40px;
+	height: 20px;
+	z-index: 2;
+}
+
+.filelist li ul li {
+	overflow: hidden;
+	height: 0;
+	list-style: none;
+}
+
+.filelist li ul li span {
+	background: #93d;
+	width: 100px; /* サブメニューの幅 */
+}
+
+.filelist li:hover ul li ul li:hover > span {
+	color: #22a;
+	background: #d01;
+	z-index: 3;
+}
+
+.filelist li:hover > ul > li:hover > ul > li {
+	left: 10px;
+}
+
+.filelist li ul li ul li span {
+	background: #622;
+	width: 50px; /* 孫メニューの幅 */
+}
+
+/* カレントディレクトリ表示パネル */
+#currentDirSpan {
+	flex: 0 0 20px; 
+	box-sizing: border-box; 
+	padding: 0 6px; 
+	line-height: 19px;
+	background-color: #e0e0e0;
+	color: #333;
+	font-weight: bold;
+	font-size: 11px;
+	border-bottom: 1px solid #aaa;
+	white-space: nowrap;
+	overflow: hidden; 
+}
+
+/* =========================================
+   4. ボタンUI（モダン化スタイル）
+   ========================================= */
+button {
+	box-sizing: border-box; /* 高さを正確にコントロールするための魔法 */
+	height: 28px;           /* 高さをきっちり固定 */
+	padding: 0 14px;        /* heightを指定したので上下paddingは0でOK */
+	vertical-align: middle;
+	font-size: 12px;
+	margin: 2px 4px 2px 0;
+	border: none;
+	border-radius: 4px;
+	background-color: #007bff;
+	color: #ffffff;
+	cursor: pointer;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+button:hover {
+	background-color: #0056b3;
+}
+
+button:active {
+	transform: translateY(1px);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+#closeBtn, #createTxtCancelBtn {
+	background-color: #795548;
+}
+
+#closeBtn:hover, #createTxtCancelBtn:hover {
+	background-color: #5d4037;
+}
+
+/* ファイルアップロード枠のスタイル */
+.upload-box {
+	display: inline-flex;
+	align-items: center;
+	box-sizing: border-box; /* 枠線を含めて高さを計算 */
+	height: 28px;           /* ボタンと全く同じ高さに固定！ */
+	padding: 0 10px;        /* こちらも上下paddingは0に */
+	vertical-align: middle;
+	margin: 2px 4px 2px 0;
+	border: 1px solid #007bff;
+	border-radius: 4px;
+	background-color: #fff;
+	font-size: 12px;
+	color: #333;
+}
+
+/* 枠内の input 要素の微調整 */
+.upload-box input[type="file"] {
+	margin-left: 8px;
+	font-size: 11px;
+	cursor: pointer;
+}

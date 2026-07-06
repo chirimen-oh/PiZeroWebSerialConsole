@@ -213,10 +213,7 @@ fi
 
       const scriptPath = "/tmp/wifi_setup.sh";
       await saveFile(str2arrayBuffer(WiFiSetup), scriptPath);
-      await portWritelnWaitfor(
-        ` chmod +x ${scriptPath} && ${scriptPath} "${ssid}" "${pass}"`,
-        cmdPrompt,
-      );
+      await portWritelnWaitfor(` chmod +x ${scriptPath} && ${scriptPath} "${ssid}" "${pass}"`, cmdPrompt)
     }
 
     async function reboot() {
