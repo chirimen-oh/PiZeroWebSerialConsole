@@ -49,7 +49,7 @@
         messageDiv.innerHTML = "NOW GETTING NODE.JS RUNTIME";
         ret = getOutputLines(
           await portWritelnWaitfor(
-            "wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz",
+            "wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-linux-arm64-musl.tar.xz",
             cmdPrompt,
             200000,
           ),
