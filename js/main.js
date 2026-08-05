@@ -17,7 +17,7 @@ const lang = navigator.language.startsWith("ja") ? "ja" : "en";
 
 const serial = new SerialManager();
 const fileManager = new FileManager(serial, cmdPrompt);
-const term = new Terminal.Terminal();
+const term = new Terminal();
 
 const terminalEl = document.getElementById("terminal");
 const connectBtn = document.getElementById("connectBtn");

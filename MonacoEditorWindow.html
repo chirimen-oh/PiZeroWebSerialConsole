@@ -38,11 +38,11 @@
   </style>
 
   <script>
-    var require = { paths: { vs: "monaco/min/vs" } };
+    var MONACO_MIN_BASE = "https://unpkg.com/monaco-editor@0.56.0/min";
+    var require = { paths: { vs: MONACO_MIN_BASE + "/vs" } };
   </script>
-  <script src="monaco/min/vs/loader.js"></script>
-  <script src="monaco/min/vs/editor/editor.main.nls.js"></script>
-  <script src="monaco/min/vs/editor/editor.main.js"></script>
+  <script src="https://unpkg.com/monaco-editor@0.56.0/min/vs/loader.js"></script>
+  <script src="https://unpkg.com/monaco-editor@0.56.0/min/vs/editor/editor.main.js"></script>
 
   <script>
     // https://microsoft.github.io/monaco-editor/
@@ -64,7 +64,7 @@
         lineNumbers: "on",
       });
       editor.addCommand(
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S,
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
         function () {
           saveSource(true);
           /**
