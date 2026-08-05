@@ -49,7 +49,8 @@ serial.onDataReceived = (data) => {
 
 // --- コネクション＆ログイン ---
 async function autoLogInPiZero(noRetry = false) {
-	await serial.connect();
+  window.onbeforeunload = e => e.preventDefault();
+  await serial.connect();
 	await sleep(100);
 	term.writeln("<<CONNECTED>> Waiting prompt...");
 
@@ -332,7 +333,8 @@ function handleCreateNewTxt(stat) {
 // --- イベントリスナー ---
 connectBtn.addEventListener("click", () => autoLogInPiZero());
 document.getElementById("closeBtn").addEventListener("click", async () => {
-	await serial.disconnect();
+  await serial.disconnect();
+  window.onbeforeunload = null;
 	connectBtn.style.display = "";
 	cmdBtns.style.display = "none";
 	term.writeln("\r\n<<CONNETCTION CLOSED>>");
@@ -403,7 +405,8 @@ window.showDir = async () => await renderFileList();
 window.lsal = async () => await fileManager.lsal();
 
 window.closeConnection = async () => {
-	await serial.disconnect();
+  await serial.disconnect();
+	window.onbeforeunload = null;
 	connectBtn.style.display = "";
 	cmdBtns.style.display = "none";
 	term.writeln("\r\n<<CONNETCTION CLOSED>>");
