@@ -5,14 +5,14 @@
     <meta charset="utf-8" />
   </head>
   <script>
-    var appDir = "~/myApp";
-    var residentCronTag = "chirimenResidentApp"; // crontab @reboot 行の目印
+    const appDir = "~/myApp";
+    const residentCronTag = "chirimenResidentApp"; // crontab @reboot 行の目印
 
     onload = async function () {
       window.addEventListener("message", receiveMessage, false);
       portWritelnWaitfor = window.opener.portWritelnWaitfor;
       getOutputLines = function (inp) {
-        var ret = window.opener.getOutputLines(inp);
+        const ret = window.opener.getOutputLines(inp);
         console.log(ret);
         return ret;
       };
@@ -23,13 +23,13 @@
     };
     const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
 
-    var nodeVersion = "v22.22.3";
+    const nodeVersion = "v22.22.3";
     async function setupChirimen() {
       messageDiv.innerHTML = "START CHIRIMEN SETUP";
-      var ret;
+      let ret;
 
       ret = getOutputLines(await portWritelnWaitfor("cd", cmdPrompt));
-      var nodeV;
+      let nodeV;
       ret = getOutputLines(
         await portWritelnWaitfor("node -v", cmdPrompt, 20000),
       );
@@ -49,7 +49,7 @@
         messageDiv.innerHTML = "NOW GETTING NODE.JS RUNTIME";
         ret = getOutputLines(
           await portWritelnWaitfor(
-            "wget https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz",
+            "curl -sSfLO https://unofficial-builds.nodejs.org/download/release/$VERSION/node-$VERSION-$DISTRO.tar.xz",
             cmdPrompt,
             200000,
           ),
@@ -133,7 +133,7 @@
       if (!targetDir) {
         targetDir = appDir;
       }
-      var ret;
+      let ret;
       ret = getOutputLines(
         await portWritelnWaitfor("mkdir " + targetDir, cmdPrompt),
       );
@@ -142,14 +142,14 @@
       );
       ret = getOutputLines(
         await portWritelnWaitfor(
-          "wget -O package.json https://tutorial.chirimen.org/pizero/package.json",
+          "curl -sSfL -o package.json https://tutorial.chirimen.org/pizero/package.json",
           cmdPrompt,
           20000,
         ),
       );
       ret = getOutputLines(
         await portWritelnWaitfor(
-          "wget -O RelayServer.js https://chirimen.org/remote-connection/js/beta/RelayServer.js",
+          "curl -sSfL -o RelayServer.js https://chirimen.org/remote-connection/js/beta/RelayServer.js",
           cmdPrompt,
           20000,
         ),
@@ -161,11 +161,11 @@
 
     async function i2cdetect() {
       // 2022/10/24 remove -r option
-      var ret = getOutputLines(
+      const ret = getOutputLines(
         await portWritelnWaitfor(" i2cdetect -y 1", cmdPrompt),
       );
-      var ht = "<pre><code>     ";
-      for (var i = 1; i < ret.length - 1; i++) {
+      let ht = "<pre><code>     ";
+      for (let i = 1; i < ret.length - 1; i++) {
         ht += ret[i] + "\n";
       }
       ht += "</pre></code>";
@@ -173,7 +173,7 @@
     }
 
     function examplePanel() {
-      var ifr = document.createElement("iframe");
+      const ifr = document.createElement("iframe");
       ifr.style.width = "100%";
       ifr.style.height = "100%";
       //	ifr.src="../tmp/e_index.html";
@@ -185,13 +185,13 @@
     async function receiveMessage(event) {
       console.log("get message:", event);
       if (event.data.req && event.data.req == "getSrc") {
-        var ret = getOutputLines(
+        let ret = getOutputLines(
           await portWritelnWaitfor("cd " + appDir, cmdPrompt),
         );
-        var fileName = "main-" + event.data.exampleId + ".js";
+        const fileName = `main-${event.data.exampleId}.js`;
         ret = getOutputLines(
           await portWritelnWaitfor(
-            "wget " + event.data.url + " -O " + fileName,
+            `curl -sSfL -o ${fileName} ${event.data.url}`,
             cmdPrompt,
             20000,
           ),
@@ -201,13 +201,13 @@
     }
 
     async function getJsApps() {
-      var ret = getOutputLines(
+      const ret = getOutputLines(
         await portWritelnWaitfor(` cd ${appDir}`, cmdPrompt),
       );
       await window.opener.showDir();
-      var files = (await window.opener.lsal()).files;
-      var jsApps = [];
-      for (var file of files) {
+      const files = (await window.opener.lsal()).files;
+      const jsApps = [];
+      for (let file of files) {
         if (file.name.endsWith(".js")) {
           jsApps.push(file.name);
         }
@@ -294,7 +294,7 @@ fi`,
     async function changeResidentApp(event) {
       await portWritelnWaitfor(` cd ${appDir}`, cmdPrompt);
       await window.opener.showDir();
-      var apName = event.target.value;
+      const apName = event.target.value;
       disableResidentAppTable(true);
       console.log("changeResidentApp:", apName);
       if (apName == "StopAllApps") {
@@ -310,8 +310,8 @@ fi`,
     }
 
     function disableResidentAppTable(disabled) {
-      var trs = document.getElementById("residentAppTable").children;
-      for (var tr of trs) {
+      const trs = document.getElementById("residentAppTable").children;
+      for (let tr of trs) {
         if (tr.children[2].firstElementChild) {
           tr.children[2].firstElementChild.disabled = disabled;
         }
@@ -319,17 +319,17 @@ fi`,
     }
 
     async function appPanel() {
-      var apps = await getJsApps();
+      const apps = await getJsApps();
       messageDiv.innerHTML = "";
-      var subMsgDiv = document.createElement("div");
+      const subMsgDiv = document.createElement("div");
       subMsgDiv.id = "subMsgDiv";
       messageDiv.appendChild(subMsgDiv);
       console.log(apps);
-      var tbl = document.createElement("table");
+      const tbl = document.createElement("table");
       tbl.setAttribute("border", "1");
       tbl.id = "residentAppTable";
-      var trs = {};
-      var tr = document.createElement("tr");
+      const trs = {};
+      let tr = document.createElement("tr");
       tr.innerHTML = "<th>Now Running</th><th>App Name</th><th>Select</th>";
       tbl.appendChild(tr);
       tr = document.createElement("tr");
@@ -337,12 +337,12 @@ fi`,
         '<td>-</td><td>STOP ALL APPS</td><td><input type="radio" name="runApp" value="StopAllApps" disabled onchange="changeResidentApp(event)"></td>';
       trs["StopAllApps"] = tr;
       tbl.appendChild(tr);
-      for (var app of apps) {
+      for (let app of apps) {
         tr = document.createElement("tr");
-        var td1 = document.createElement("td");
-        var td2 = document.createElement("td");
+        const td1 = document.createElement("td");
+        const td2 = document.createElement("td");
         td2.innerText = app;
-        var td3 = document.createElement("td");
+        const td3 = document.createElement("td");
         td3.innerHTML =
           '<input type="radio" name="runApp" value="' +
           app +
@@ -361,17 +361,17 @@ fi`,
     // crontab -l を 1 次ソースに、どのアプリが常駐設定かを表に反映する。
     async function showResidentApp(trs) {
       console.log("showResidentApp:", trs);
-      var ret = getOutputLines(
+      const ret = getOutputLines(
         await portWritelnWaitfor(" crontab -l", cmdPrompt, 20000),
       );
       subMsgDiv.innerText = "-";
-      var current = null;
-      for (var line of ret) {
+      let current = null;
+      for (let line of ret) {
         if (
           line.indexOf(residentCronTag) >= 0 &&
           line.indexOf("@reboot") >= 0
         ) {
-          var m = line.match(/_ '([^']*)' # /);
+          const m = line.match(/_ '([^']*)' # /);
           if (m) {
             current = m[1];
           }

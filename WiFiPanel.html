@@ -84,15 +84,15 @@
         **/
         ret = getOutputLines(
           await portWritelnWaitfor(
-            " wget --spider -nv https://tutorial.chirimen.org/",
+            " curl -sL -o /dev/null -w '%{http_code}\\n' https://tutorial.chirimen.org/",
             cmdPrompt,
           ),
         );
-        if (ret[ret.length - 2].indexOf("200 OK") >= 0) {
+        if (ret[ret.length - 2].trim() == "200") {
           pingok = true;
         }
       } catch (e) {}
-      console.log("ping(wget):", ret[ret.length - 2], pingok);
+      console.log("ping(curl):", ret[ret.length - 2], pingok);
 
       if (pingok) {
         infoPre.insertAdjacentHTML(
