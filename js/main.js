@@ -157,6 +157,18 @@ async function renderFileList() {
 				)
 			);
 
+			// .js ファイルにだけ「実行」を表示し、クリックで node 実行する
+			// ※「削除」の確認サブメニューはホバー時にメニュー下方向へ展開されるため、
+			//   「削除」より後ろに項目があると位置が重なって隠れてしまう。
+			//   そのため「実行」は必ず「削除」より前に配置する。
+			if (file.name.toLowerCase().endsWith(".js")) {
+				actUl.appendChild(
+					createActionLi(FileManagerMessage[lang].run, () =>
+						runJsFile(file.name)
+					)
+				);
+			}
+
 			const delLi = document.createElement("li");
 			const delSpan = document.createElement("span");
 			delSpan.innerText = FileManagerMessage[lang].delete;
@@ -172,15 +184,6 @@ async function renderFileList() {
 			);
 			delLi.appendChild(delCfUl);
 			actUl.appendChild(delLi);
-
-			// .js ファイルにだけ「実行」を表示し、クリックで node 実行する
-			if (file.name.toLowerCase().endsWith(".js")) {
-				actUl.appendChild(
-					createActionLi(FileManagerMessage[lang].run, () =>
-						runJsFile(file.name)
-					)
-				);
-			}
 		}
 		li.appendChild(actUl);
 		ul.appendChild(li);
