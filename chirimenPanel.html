@@ -225,14 +225,18 @@
     // 常駐起動の bash -lc 本体(cron / 即時起動 で共用)。$1 に .js ファイル名を渡す。
     // echo $$ で PID を記録し exec で node に置換するため、PID ファイルには
     // node 本体(= setsid によりプロセスグループの先頭)の PID が入る。
+    // 起動直後は @reboot が wlan0 の DHCP 取得より先に発火しうるため、
+    // WiFi 疎通(または SECONDS 経過によるタイムアウト)まで待ってから起動する。
+    const wifiWaitTimeoutSec = 300;
+
     function residentLaunchScript() {
-      return `cd ${appDir} && echo $$ > ${appDir}/.pid && exec node --watch "$1" >> "\${1%.js}.log" 2>&1`;
+      return `cd ${appDir} && while ! ping -c1 -W2 tutorial.chirimen.org >/dev/null 2>&1 && [ $SECONDS -lt ${wifiWaitTimeoutSec} ]; do sleep 2; done; echo $$ > ${appDir}/.pid && exec node --watch "$1" >> "\${1%.js}.log" 2>&1`;
     }
 
     // crontab に書き込む @reboot 行。行全体は cron の sh -c に渡される。
     function residentCronLine(appName) {
       // cronの仕様で「%」が改行扱いになるため、cron登録時のみ「\%」にエスケープする
-      return `@reboot setsid bash -lc '${residentLaunchScript().replace(/%/g, '\\%')}' _ '${appName}' # ${residentCronTag}`;
+      return `@reboot setsid bash -lc '${residentLaunchScript().replace(/%/g, "\\%")}' _ '${appName}' # ${residentCronTag}`;
     }
 
     // 文字列をシェルの単一引用符で安全に囲む(中の ' は '\'' に置換)。
