@@ -191,7 +191,7 @@
         const fileName = `main-${event.data.exampleId}.js`;
         ret = getOutputLines(
           await portWritelnWaitfor(
-            `curl -sSfL -o ${fileName} ${event.data.url}`,
+            ` curl -sSfL -o ${fileName} ${event.data.url}`,
             cmdPrompt,
             20000,
           ),
