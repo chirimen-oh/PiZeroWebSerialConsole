@@ -204,6 +204,7 @@ network={
 EOL
   sudo wpa_cli -i wlan0 reconfigure
 else
+  sudo nmcli connection delete "$SSID" || true
   sudo nmcli dev wifi connect "$SSID" password "$PASSWORD"
 fi
 `;
